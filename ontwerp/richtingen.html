@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drie ontwerprichtingen</title>
+<style>
+/* Lettertypes staan in de map van de site zelf. Er wordt niets bij andere bedrijven opgehaald. */
+@font-face { font-family: "Big Shoulders Display"; font-weight: 800; src: url(../fonts/big-shoulders-display-800.woff2) format("woff2"); }
+@font-face { font-family: "Big Shoulders Display"; font-weight: 900; src: url(../fonts/big-shoulders-display-900.woff2) format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 400; src: url(../fonts/barlow-400.woff2) format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 600; src: url(../fonts/barlow-600.woff2) format("woff2"); }
+@font-face { font-family: "Patrick Hand"; font-weight: 400; src: url(../fonts/patrick-hand-400.woff2) format("woff2"); }
+@font-face { font-family: "Atkinson Hyperlegible"; font-weight: 400; src: url(../fonts/atkinson-hyperlegible-400.woff2) format("woff2"); }
+@font-face { font-family: "Atkinson Hyperlegible"; font-weight: 700; src: url(../fonts/atkinson-hyperlegible-700.woff2) format("woff2"); }
+@font-face { font-family: "Fredoka"; font-weight: 500; src: url(../fonts/fredoka-500.woff2) format("woff2"); }
+@font-face { font-family: "Fredoka"; font-weight: 700; src: url(../fonts/fredoka-700.woff2) format("woff2"); }
+
+/* ---- het kader om de voorbeelden heen: bewust kaal, zodat het niet meestuurt ---- */
+* { box-sizing: border-box; }
+body { margin: 0; background: #e8e8eb; color: #1c1c1f; font: 16px/1.5 system-ui, "Segoe UI", sans-serif; }
+.top { position: sticky; top: 0; z-index: 9; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; padding: 12px 20px; background: #fff; border-bottom: 1px solid #c9c9cf; }
+.top strong { margin-right: auto; }
+.top a { color: #1c1c1f; font-weight: 600; }
+.richting { max-width: 1040px; margin: 0 auto; padding: 44px 20px 30px; }
+.richting > h2 { margin: 0; font-size: 30px; line-height: 1.2; }
+.richting > p { margin: 6px 0 16px; max-width: 68ch; }
+.stalen { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 6px; padding: 0; list-style: none; }
+.stalen li { width: 118px; font-size: 12.5px; line-height: 1.3; }
+.stalen i { display: block; height: 46px; margin-bottom: 4px; border: 1px solid rgba(0, 0, 0, 0.18); border-radius: 6px; }
+.letters { margin: 10px 0 0; font-size: 14px; color: #4a4a52; }
+.schermnaam { margin: 26px 0 8px; font-size: 13px; font-weight: 600; color: #4a4a52; }
+/* Elk voorbeeldscherm schaalt mee: alle maten binnenin zijn een deel van de breedte (cqw). */
+.scherm { position: relative; container-type: inline-size; width: 100%; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 10px; box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2); }
+.scherm * { margin: 0; }
+
+/* =================== A. SPORTDAG =================== */
+.ra { --baan: #1946c8; --baan2: #143aab; --krijt: #f6f4ec; --hesje: #e2f53c; --inkt: #0b1a4d; --finish: #ff5a4f; }
+.ra .scherm { background: var(--baan); color: var(--krijt); font-family: "Barlow", sans-serif; font-size: 1.7cqw; }
+.ra .groot { font-family: "Big Shoulders Display", sans-serif; font-weight: 900; line-height: 0.86; }
+.ra .balk { position: absolute; inset: 0 0 auto 0; display: flex; align-items: baseline; gap: 3cqw; padding: 2.2cqw 4cqw 0; }
+.ra .merk { font-family: "Big Shoulders Display", sans-serif; font-weight: 800; font-size: 3cqw; }
+.ra .balk .nav { margin-left: auto; display: flex; gap: 3cqw; font-weight: 600; }
+/* start: het menu is de startlijst, elk spel een baan */
+.ra .held { position: absolute; left: 4cqw; top: 8.4cqw; }
+.ra .held .groot { font-size: 12.5cqw; }
+.ra .held p { margin-top: 1.4cqw; max-width: 36cqw; font-size: 1.9cqw; }
+.ra .banen { position: absolute; inset: auto 0 0 0; }
+.ra .baanrij { display: grid; grid-template-columns: 5.2cqw 1fr auto; align-items: center; gap: 2cqw; height: 6.1cqw; padding: 0 4cqw; border-top: 0.28cqw solid rgba(246, 244, 236, 0.8); }
+.ra .baanrij:nth-child(even) { background: var(--baan2); }
+.ra .nr { display: grid; place-items: center; width: 3.9cqw; height: 3.9cqw; background: var(--krijt); color: var(--inkt); font-family: "Big Shoulders Display", sans-serif; font-weight: 900; font-size: 2.9cqw; border-radius: 0.4cqw; }
+.ra .naam { font-family: "Big Shoulders Display", sans-serif; font-weight: 800; font-size: 3.4cqw; line-height: 1; }
+.ra .naam small { margin-left: 1.4cqw; font-family: "Barlow", sans-serif; font-weight: 400; font-size: 1.7cqw; opacity: 0.85; }
+.ra .tijd { font-family: "Big Shoulders Display", sans-serif; font-weight: 800; font-size: 3cqw; color: var(--hesje); font-variant-numeric: tabular-nums; }
+.ra .tijd.leeg { color: var(--krijt); opacity: 0.6; font-family: "Barlow", sans-serif; font-weight: 400; font-size: 1.7cqw; }
+.ra .baanrij.gekozen { background: var(--hesje); color: var(--inkt); }
+.ra .baanrij.gekozen .tijd { color: var(--inkt); }
+.ra .baanrij.gekozen .nr { background: var(--inkt); color: var(--hesje); }
+/* spel: twee banen, jij en je vorige run */
+.ra .klok { position: absolute; right: 4cqw; top: 1.6cqw; font-family: "Big Shoulders Display", sans-serif; font-weight: 900; font-size: 6cqw; color: var(--hesje); font-variant-numeric: tabular-nums; }
+.ra .klok small { font-size: 2.6cqw; }
+.ra .race { position: absolute; inset: 10.5cqw 0 auto 0; }
+.ra .race .baanrij { grid-template-columns: 12cqw 1fr; height: 4.6cqw; }
+.ra .race .baanrij:last-child { border-bottom: 0.28cqw solid rgba(246, 244, 236, 0.8); }
+.ra .race .wie { font-weight: 600; }
+.ra .spoor { position: relative; height: 100%; border-right: 0.9cqw solid var(--finish); }
+.ra .loper { position: absolute; top: 50%; width: 2.6cqw; height: 2.6cqw; border-radius: 50%; transform: translate(-50%, -50%); }
+.ra .loper.ik { background: var(--hesje); }
+.ra .loper.spook { border: 0.4cqw solid var(--krijt); opacity: 0.75; }
+.ra .opgave { position: absolute; inset: 23cqw 0 auto 0; text-align: center; }
+.ra .opgave .groot { font-size: 17cqw; }
+.ra .invoer { display: inline-block; min-width: 22cqw; margin-top: 2cqw; padding: 0.6cqw 2cqw; background: var(--krijt); color: var(--inkt); font-family: "Big Shoulders Display", sans-serif; font-weight: 900; font-size: 7cqw; line-height: 1; border-radius: 0.5cqw; }
+.ra .invoer::after { content: ""; display: inline-block; width: 0.45cqw; height: 5.4cqw; margin-left: 0.5cqw; background: var(--baan); vertical-align: -0.5cqw; }
+.ra .stand { position: absolute; inset: auto 0 3cqw 0; text-align: center; font-family: "Big Shoulders Display", sans-serif; font-weight: 800; font-size: 3.6cqw; color: var(--hesje); }
+/* uitslag: je tijd en het bord met de drie tijden */
+.ra .eind { position: absolute; left: 4cqw; top: 9cqw; }
+.ra .eind .groot { font-size: 21cqw; color: var(--hesje); font-variant-numeric: tabular-nums; }
+.ra .eind .groot small { font-size: 6cqw; }
+.ra .eind p { margin-top: 2.6cqw; font-size: 2.5cqw; font-weight: 600; }
+.ra .eind p + p { margin-top: 0.8cqw; font-size: 1.9cqw; font-weight: 400; opacity: 0.9; }
+.ra .bord { position: absolute; right: 4cqw; top: 12cqw; width: 32cqw; }
+.ra .bord div { display: flex; justify-content: space-between; align-items: baseline; padding: 1.1cqw 0; border-top: 0.28cqw solid rgba(246, 244, 236, 0.8); }
+.ra .bord div:last-child { border-bottom: 0.28cqw solid rgba(246, 244, 236, 0.8); }
+.ra .bord b { font-family: "Big Shoulders Display", sans-serif; font-weight: 800; font-size: 3.4cqw; font-variant-numeric: tabular-nums; }
+.ra .bord .nu b { color: var(--hesje); }
+.ra .plak { display: inline-block; margin-top: 2cqw; padding: 0.5cqw 1.6cqw; background: #cfd6e0; color: var(--inkt); font-weight: 600; border-radius: 0.4cqw; }
+.ra .knoppen { position: absolute; left: 4cqw; bottom: 4.5cqw; display: flex; gap: 1.6cqw; }
+.ra .knop { padding: 1.2cqw 3cqw; background: var(--hesje); color: var(--inkt); font-family: "Big Shoulders Display", sans-serif; font-weight: 800; font-size: 3cqw; line-height: 1; border-radius: 0.5cqw; }
+.ra .knop.stil { background: none; color: var(--krijt); box-shadow: inset 0 0 0 0.3cqw var(--krijt); }
+
+/* =================== B. RUITJESSCHRIFT =================== */
+.rb { --papier: #fdfdf8; --ruit: #c6d7ef; --vulpen: #1f3ba6; --rood: #d7263d; --stift: #ffe45c; --potlood: #50545e; }
+.rb .scherm { --r: 3.125cqw; background-color: var(--papier); background-image: linear-gradient(var(--ruit) 0.1cqw, transparent 0.1cqw), linear-gradient(90deg, var(--ruit) 0.1cqw, transparent 0.1cqw); background-size: var(--r) var(--r); color: var(--vulpen); font-family: "Patrick Hand", cursive; font-size: 2.5cqw; line-height: var(--r); }
+.rb .scherm::before { content: ""; position: absolute; inset: 0 auto 0 calc(3 * var(--r)); width: 0.22cqw; background: var(--rood); opacity: 0.7; }
+.rb .klein { font-family: "Atkinson Hyperlegible", sans-serif; font-size: 1.6cqw; color: var(--potlood); }
+.rb .merk { position: absolute; left: calc(4 * var(--r)); top: calc(1 * var(--r)); font-size: 3.6cqw; line-height: calc(2 * var(--r)); }
+.rb .hoek { position: absolute; right: calc(5 * var(--r)); top: calc(1 * var(--r)); line-height: calc(2 * var(--r)); }
+/* tabbladen aan de rand, zoals in een multomap */
+.rb .tabs { position: absolute; right: 0; top: calc(4 * var(--r)); display: grid; gap: 0.5cqw; }
+.rb .tabs span { padding: 0 1.6cqw 0 1.4cqw; font-family: "Atkinson Hyperlegible", sans-serif; font-weight: 700; font-size: 1.5cqw; line-height: calc(1.5 * var(--r)); color: #17203a; border-radius: 0.8cqw 0 0 0.8cqw; }
+.rb .tabs span:nth-child(1) { background: var(--stift); margin-left: -1.5cqw; }
+.rb .tabs span:nth-child(2) { background: #9fd8a4; }
+.rb .tabs span:nth-child(3) { background: #f4a9b4; }
+.rb .tabs span:nth-child(4) { background: #a9c6f4; }
+.rb .som { position: absolute; left: calc(4 * var(--r)); font-size: 12.4cqw; line-height: calc(4 * var(--r)); white-space: nowrap; }
+.rb .vak { display: inline-block; min-width: calc(6 * var(--r)); height: calc(4 * var(--r)); margin-left: 1cqw; padding: 0 1cqw; border: 0.3cqw dashed var(--potlood); border-radius: 0.6cqw; vertical-align: top; text-align: center; }
+.rb .start .som { top: calc(5 * var(--r)); }
+.rb .start .tip { position: absolute; left: calc(4 * var(--r)); top: calc(10 * var(--r)); }
+.rb .lijst { position: absolute; left: calc(4 * var(--r)); top: calc(12 * var(--r)); font-size: 2.9cqw; }
+.rb .lijst div { display: flex; align-items: baseline; gap: 1.2cqw; height: calc(1.5 * var(--r)); white-space: nowrap; }
+.rb .hokje { flex: none; width: 2.1cqw; height: 2.1cqw; border: 0.25cqw solid var(--vulpen); border-radius: 0.3cqw; align-self: center; }
+.rb .rood { color: var(--rood); }
+.rb .krul { display: inline-block; width: 4.4cqw; height: 2.9cqw; color: var(--rood); vertical-align: -0.6cqw; }
+.rb .krul path, .rb .rondje path { fill: none; stroke: currentColor; stroke-linecap: round; }
+/* spel */
+.rb .titel { position: absolute; left: calc(4 * var(--r)); top: calc(1 * var(--r)); font-size: 3.6cqw; line-height: calc(2 * var(--r)); border-bottom: 0.3cqw solid var(--vulpen); }
+.rb .eerder { position: absolute; left: calc(4 * var(--r)); top: calc(4 * var(--r)); font-size: 3.6cqw; line-height: calc(2 * var(--r)); opacity: 0.8; }
+.rb .spel .som { top: calc(9 * var(--r)); }
+.rb .notitie { position: absolute; left: calc(18 * var(--r)); top: calc(14.5 * var(--r)); padding: 0 1cqw; background: var(--stift); color: #17203a; font-size: 3.2cqw; line-height: calc(1.5 * var(--r)); transform: rotate(-1.5deg); }
+/* uitslag: het cijfer omcirkeld met rode pen */
+.rb .uitslag .som { top: calc(5 * var(--r)); left: calc(6 * var(--r)); }
+.rb .rondje { position: absolute; left: calc(4.2 * var(--r)); top: calc(4.1 * var(--r)); width: 43cqw; height: 18cqw; color: var(--rood); transform: rotate(-2deg); }
+.rb .juf { position: absolute; left: calc(19.5 * var(--r)); top: calc(5.5 * var(--r)); color: var(--rood); font-size: 3.6cqw; line-height: calc(1.5 * var(--r)); transform: rotate(-4deg); }
+.rb .sticker { position: absolute; right: calc(6 * var(--r)); top: calc(10 * var(--r)); width: 12cqw; transform: rotate(9deg); filter: drop-shadow(0.2cqw 0.3cqw 0.3cqw rgba(0, 0, 0, 0.25)); }
+.rb .sticker text { font-family: "Atkinson Hyperlegible", sans-serif; font-weight: 700; font-size: 15px; fill: #2a2f3a; text-anchor: middle; }
+.rb .feiten { position: absolute; left: calc(4 * var(--r)); top: calc(11 * var(--r)); font-size: 2.7cqw; }
+.rb .feiten div { height: var(--r); }
+.rb .acties { position: absolute; left: calc(4 * var(--r)); top: calc(16 * var(--r)); display: flex; gap: 4cqw; font-size: 3.6cqw; line-height: calc(2 * var(--r)); }
+.rb .acties b { padding: 0 1.4cqw; background: var(--stift); color: #17203a; font-weight: 400; }
+.rb .acties span { text-decoration: underline; text-underline-offset: 0.6cqw; }
+
+/* =================== C. SPEELKAARTEN =================== */
+.rc { --tafel: #f0eef8; --inkt: #1e1b3a; --tomaat: #ff5b4d; --zon: #ffc533; --lucht: #3b9dff; --munt: #25c48a; --druif: #7a5cfa; --roze: #ff7ab6; }
+.rc .scherm { background: var(--tafel); color: var(--inkt); font-family: "Fredoka", sans-serif; font-weight: 500; font-size: 1.8cqw; }
+.rc .merk { position: absolute; left: 4cqw; top: 2.4cqw; font-weight: 700; font-size: 2.8cqw; }
+.rc .nav { position: absolute; right: 4cqw; top: 2.9cqw; display: flex; gap: 3cqw; }
+.rc .held { position: absolute; left: 4cqw; top: 11cqw; width: 36cqw; }
+.rc .held h3 { font-weight: 700; font-size: 9.6cqw; line-height: 0.95; }
+.rc .held p { margin-top: 2cqw; font-size: 2.1cqw; }
+.rc .kaart { position: absolute; display: flex; flex-direction: column; justify-content: space-between; width: 15.6cqw; height: 22cqw; padding: 1.5cqw; color: #fff; font-weight: 700; font-size: 2.05cqw; line-height: 1.05; border-radius: 1.8cqw; box-shadow: 0 0.5cqw 0 rgba(30, 27, 58, 0.16); }
+.rc .kaart svg { width: 7.6cqw; height: 7.6cqw; align-self: flex-end; }
+.rc .kaart small { display: block; margin-top: 0.4cqw; font-weight: 500; font-size: 1.45cqw; opacity: 0.95; }
+.rc .k1 { left: 42cqw; top: 9cqw; background: var(--tomaat); transform: rotate(-9deg); }
+.rc .k2 { left: 58.6cqw; top: 6.5cqw; background: var(--zon); color: var(--inkt); transform: rotate(-2deg); }
+.rc .k3 { left: 75.4cqw; top: 8.5cqw; background: var(--druif); transform: rotate(7deg); }
+.rc .k4 { left: 44.5cqw; top: 33.5cqw; background: var(--lucht); transform: rotate(5deg); }
+.rc .k5 { left: 61cqw; top: 35cqw; background: var(--munt); color: var(--inkt); transform: rotate(-4deg); }
+.rc .k6 { left: 77.8cqw; top: 33cqw; background: var(--inkt); transform: rotate(-8deg); }
+/* spel: een grote kaart met de som */
+.rc .label { position: absolute; left: 4cqw; top: 2.6cqw; font-weight: 700; font-size: 2.6cqw; }
+.rc .label small { margin-left: 1.2cqw; font-weight: 500; font-size: 1.8cqw; }
+.rc .klokje { position: absolute; right: 4cqw; top: 2.2cqw; padding: 0.5cqw 1.8cqw; background: var(--inkt); color: #fff; font-weight: 700; font-size: 2.6cqw; border-radius: 99cqw; font-variant-numeric: tabular-nums; }
+.rc .pitten { position: absolute; inset: 9.5cqw 0 auto 0; display: flex; justify-content: center; gap: 1cqw; }
+.rc .pitten i { width: 2.1cqw; height: 2.1cqw; border: 0.35cqw solid var(--tomaat); border-radius: 50%; }
+.rc .pitten i.vol { background: var(--tomaat); }
+.rc .pitten i.spook { box-shadow: 0 0 0 0.5cqw var(--tafel), 0 0 0 0.85cqw var(--inkt); }
+.rc .somkaart { position: absolute; left: 24cqw; top: 15cqw; width: 52cqw; height: 26cqw; display: grid; place-items: center; background: var(--tomaat); color: #fff; font-weight: 700; font-size: 12.5cqw; border-radius: 2.6cqw; box-shadow: 0 0.8cqw 0 #c93e33; transform: rotate(-1.2deg); }
+.rc .veld { position: absolute; left: 38cqw; top: 45cqw; width: 24cqw; padding: 0.6cqw 0; background: #fff; text-align: center; font-weight: 700; font-size: 5.6cqw; line-height: 1.1; border: 0.4cqw solid var(--inkt); border-radius: 1.6cqw; }
+.rc .voor { position: absolute; left: 65cqw; top: 46.6cqw; padding: 0.5cqw 1.6cqw; background: var(--munt); font-weight: 700; font-size: 2.1cqw; border-radius: 99cqw; }
+/* uitslag: de kaart omgedraaid */
+.rc .omgedraaid { position: absolute; left: 6cqw; top: 9.5cqw; width: 50cqw; height: 36cqw; padding: 3cqw 3.4cqw; background: #fff; border-top: 2.4cqw solid var(--tomaat); border-radius: 2.6cqw; box-shadow: 0 0.8cqw 0 rgba(30, 27, 58, 0.16); transform: rotate(-1.5deg); }
+.rc .omgedraaid h3 { font-weight: 700; font-size: 13cqw; line-height: 1; font-variant-numeric: tabular-nums; }
+.rc .omgedraaid h3 small { font-size: 5cqw; }
+.rc .omgedraaid p { margin-top: 1.4cqw; font-weight: 700; font-size: 2.7cqw; line-height: 1.2; }
+.rc .omgedraaid p + p { font-weight: 500; font-size: 2cqw; }
+.rc .fiche { position: absolute; left: 62cqw; top: 12cqw; display: grid; place-items: center; width: 17cqw; height: 17cqw; background: #d5dae4; font-weight: 700; font-size: 2.9cqw; border: 0.6cqw solid #fff; outline: 0.5cqw dashed #9aa3b5; outline-offset: -2cqw; border-radius: 50%; box-shadow: 0 0.6cqw 0 rgba(30, 27, 58, 0.16); transform: rotate(8deg); }
+.rc .zij { position: absolute; left: 62cqw; top: 33cqw; width: 32cqw; font-size: 2cqw; line-height: 1.5; }
+.rc .zij b { font-weight: 700; }
+.rc .acties { position: absolute; left: 62cqw; top: 45cqw; display: flex; gap: 1.4cqw; }
+.rc .acties b { padding: 1.1cqw 2.8cqw; background: var(--tomaat); color: #fff; font-weight: 700; font-size: 2.4cqw; border-radius: 99cqw; box-shadow: 0 0.5cqw 0 #c93e33; }
+.rc .acties span { padding: 1.1cqw 2cqw; font-weight: 700; font-size: 2.4cqw; }
+</style>
+</head>
+<body>
+<div class="top">
+  <strong>Drie ontwerprichtingen. Kies er een, of een mix.</strong>
+  <a href="#a">A. Sportdag</a><a href="#b">B. Ruitjesschrift</a><a href="#c">C. Speelkaarten</a>
+</div>
+
+<!-- =================== A =================== -->
+<section class="richting ra" id="a">
+  <h2>A. Sportdag</h2>
+  <p>De site is een atletiekbaan. Het menu is de startlijst: elk spel een baan, met je record als tijd aan het eind. Tijdens een ronde loop je in baan 1 en je vorige run in baan 2.</p>
+  <ul class="stalen">
+    <li><i style="background:#1946c8"></i>Baan #1946c8</li>
+    <li><i style="background:#f6f4ec"></i>Krijt #f6f4ec</li>
+    <li><i style="background:#e2f53c"></i>Hesje #e2f53c</li>
+    <li><i style="background:#0b1a4d"></i>Inkt #0b1a4d</li>
+    <li><i style="background:#ff5a4f"></i>Finish #ff5a4f</li>
+  </ul>
+  <p class="letters">Letters: Big Shoulders Display voor getallen en koppen, Barlow voor tekst.</p>
+
+  <p class="schermnaam">Start</p>
+  <div class="scherm">
+    <div class="balk"><span class="merk">Breinbaan</span><span class="nav"><span>Ranglijst</span><span>Uitslagen</span><span>Uitleg</span></span></div>
+    <div class="held"><div class="groot">Klaar? Af.</div><p>Reken tegen de klok en race tegen je eigen vorige run.</p></div>
+    <div class="banen">
+      <div class="baanrij gekozen"><span class="nr">1</span><span class="naam">Sprint<small>15 sommen</small></span><span class="tijd">34,27 s</span></div>
+      <div class="baanrij"><span class="nr">2</span><span class="naam">Tijdrace<small>60 seconden</small></span><span class="tijd">14 goed</span></div>
+      <div class="baanrij"><span class="nr">3</span><span class="naam">Cijferreeksen<small>ontdek het patroon</small></span><span class="tijd">9 goed</span></div>
+      <div class="baanrij"><span class="nr">4</span><span class="naam">Kubussen<small>vouw de uitslag dicht</small></span><span class="tijd leeg">nog geen record</span></div>
+      <div class="baanrij"><span class="nr">5</span><span class="naam">IQ-test<small>5, 10 of 25 minuten</small></span><span class="tijd leeg">nog niet gedaan</span></div>
+    </div>
+  </div>
+
+  <p class="schermnaam">Een som in Sprint</p>
+  <div class="scherm">
+    <div class="balk"><span class="merk">Sprint</span><span>som 9 van 15</span></div>
+    <div class="klok">18,4<small> s</small></div>
+    <div class="race">
+      <div class="baanrij"><span class="wie">Jij</span><div class="spoor"><i class="loper ik" style="left:56%"></i></div></div>
+      <div class="baanrij"><span class="wie">Vorige run</span><div class="spoor"><i class="loper spook" style="left:50%"></i></div></div>
+    </div>
+    <div class="opgave"><div class="groot">7 × 16</div><span class="invoer">112</span></div>
+    <div class="stand">+ 0,8 s voor</div>
+  </div>
+
+  <p class="schermnaam">Uitslag</p>
+  <div class="scherm">
+    <div class="balk"><span class="merk">Sprint</span><span>gemiddeld, alle bewerkingen</span></div>
+    <div class="eind">
+      <div class="groot">34,27<small> s</small></div>
+      <p>1,8 seconde sneller dan je vorige run</p>
+      <p>Nog 2,3 seconde tot goud.</p>
+      <span class="plak">Zilver</span>
+    </div>
+    <div class="bord">
+      <div class="nu"><span>Deze run</span><b>34,27</b></div>
+      <div><span>Vorige run</span><b>36,10</b></div>
+      <div><span>Je record</span><b>33,10</b></div>
+    </div>
+    <div class="knoppen"><span class="knop">Nog een keer</span><span class="knop stil">Ander spel</span></div>
+  </div>
+</section>
+
+<!-- =================== B =================== -->
+<section class="richting rb" id="b">
+  <h2>B. Ruitjesschrift</h2>
+  <p>De site is een rekenschrift. Sommen staan in vulpenblauw op ruitjespapier, de juf kijkt na met rode pen en een krul, en een medaille is een sticker. De navigatie zit op tabbladen aan de rand.</p>
+  <ul class="stalen">
+    <li><i style="background:#fdfdf8"></i>Papier #fdfdf8</li>
+    <li><i style="background:#c6d7ef"></i>Ruit #c6d7ef</li>
+    <li><i style="background:#1f3ba6"></i>Vulpen #1f3ba6</li>
+    <li><i style="background:#d7263d"></i>Rode pen #d7263d</li>
+    <li><i style="background:#ffe45c"></i>Markeerstift #ffe45c</li>
+    <li><i style="background:#50545e"></i>Potlood #50545e</li>
+  </ul>
+  <p class="letters">Letters: Patrick Hand voor alles wat geschreven is, Atkinson Hyperlegible voor kleine tekst.</p>
+
+  <p class="schermnaam">Start</p>
+  <div class="scherm start">
+    <div class="merk">Breinbaan</div>
+    <div class="tabs"><span>Oefenhal</span><span>IQ-test</span><span>Ranglijst</span><span>Uitleg</span></div>
+    <div class="som">7 × 8 =<span class="vak"></span></div>
+    <p class="tip klein">Typ het antwoord. Dan begint je eerste ronde.</p>
+    <div class="lijst">
+      <div><span class="hokje"></span>Sprint, 15 sommen op tijd <span class="rood">34,27 s</span><svg class="krul" viewBox="0 0 60 40"><path stroke-width="4" d="M4 22C12 35 23 34 26 20C29 8 15 6 18 19C21 31 40 28 56 5"/></svg></div>
+      <div><span class="hokje"></span>Cijferreeksen, ontdek het patroon</div>
+      <div><span class="hokje"></span>Kubussen, vouw de uitslag dicht</div>
+      <div><span class="hokje"></span>IQ-test van 5, 10 of 25 minuten</div>
+    </div>
+  </div>
+
+  <p class="schermnaam">Een som in Sprint</p>
+  <div class="scherm spel">
+    <div class="titel">Sprint, som 9 van 15</div>
+    <div class="hoek">18,4 s</div>
+    <div class="eerder">
+      <div>9 × 12 = 108 <svg class="krul" viewBox="0 0 60 40"><path stroke-width="4" d="M4 22C12 35 23 34 26 20C29 8 15 6 18 19C21 31 40 28 56 5"/></svg></div>
+      <div>84 ÷ 7 = 12 <svg class="krul" viewBox="0 0 60 40"><path stroke-width="4" d="M4 22C12 35 23 34 26 20C29 8 15 6 18 19C21 31 40 28 56 5"/></svg></div>
+    </div>
+    <div class="som">7 × 16 =<span class="vak">112</span></div>
+    <div class="notitie">0,8 s voor op je vorige run</div>
+  </div>
+
+  <p class="schermnaam">Uitslag</p>
+  <div class="scherm uitslag">
+    <div class="titel">Sprint</div>
+    <div class="som">34,27 s</div>
+    <svg class="rondje" viewBox="0 0 300 126" preserveAspectRatio="none"><path stroke-width="3" d="M150 9C62 5 12 34 16 66C20 102 92 120 162 117C242 113 290 88 284 56C278 22 208 3 124 11"/></svg>
+    <div class="juf">1,8 s sneller<br>dan vorige keer!</div>
+    <svg class="sticker" viewBox="0 0 120 120"><path fill="#cfd6e2" stroke="#fff" stroke-width="5" stroke-linejoin="round" d="M60 6l15 33 36 4-27 25 8 36-32-18-32 18 8-36L9 43l36-4z"/><text x="60" y="68">Zilver</text></svg>
+    <div class="feiten klein">
+      <div>Je record is 33,10 s.</div>
+      <div>Nog 2,3 s tot goud.</div>
+      <div>14 van de 15 antwoorden goed.</div>
+    </div>
+    <div class="acties"><b>Nog een keer</b><span>Ander spel</span></div>
+  </div>
+</section>
+
+<!-- =================== C =================== -->
+<section class="richting rc" id="c">
+  <h2>C. Speelkaarten</h2>
+  <p>De site is een stapel speelkaarten. Elk spel heeft een eigen kleur en een eigen teken. Tijdens een ronde ligt er een grote kaart met de som op tafel. Na afloop draait hij om en zie je je score.</p>
+  <ul class="stalen">
+    <li><i style="background:#f0eef8"></i>Tafel #f0eef8</li>
+    <li><i style="background:#1e1b3a"></i>Inkt #1e1b3a</li>
+    <li><i style="background:#ff5b4d"></i>Tomaat #ff5b4d</li>
+    <li><i style="background:#ffc533"></i>Zon #ffc533</li>
+    <li><i style="background:#3b9dff"></i>Lucht #3b9dff</li>
+    <li><i style="background:#25c48a"></i>Munt #25c48a</li>
+    <li><i style="background:#7a5cfa"></i>Druif #7a5cfa</li>
+  </ul>
+  <p class="letters">Letters: Fredoka voor alles.</p>
+
+  <p class="schermnaam">Start</p>
+  <div class="scherm">
+    <div class="merk">Breinbaan</div>
+    <div class="nav"><span>Ranglijst</span><span>Uitslagen</span><span>Uitleg</span></div>
+    <div class="held"><h3>Kies een kaart.</h3><p>Acht spellen en een IQ-test. Je begint meteen.</p></div>
+    <div class="kaart k1"><svg viewBox="0 0 40 40"><path fill="#fff" d="M23 2 7 23h11l-3 15 18-22H21z"/></svg><span>Sprint<small>15 sommen</small></span></div>
+    <div class="kaart k2"><svg viewBox="0 0 40 40"><circle cx="20" cy="21" r="15" fill="none" stroke="#1e1b3a" stroke-width="4"/><path d="M20 12v10l7 4" fill="none" stroke="#1e1b3a" stroke-width="4" stroke-linecap="round"/></svg><span>Tijdrace<small>60 seconden</small></span></div>
+    <div class="kaart k3"><svg viewBox="0 0 40 40"><path fill="#fff" d="M20 36C6 26 3 19 3 13a9 9 0 0 1 17-4 9 9 0 0 1 17 4c0 6-3 13-17 23z"/></svg><span>Overleven<small>drie levens</small></span></div>
+    <div class="kaart k4"><svg viewBox="0 0 40 40" fill="#fff"><circle cx="6" cy="20" r="4"/><circle cx="17" cy="20" r="5.5"/><circle cx="31" cy="20" r="7.5"/></svg><span>Cijferreeksen<small>ontdek het patroon</small></span></div>
+    <div class="kaart k5"><svg viewBox="0 0 40 40" stroke="#1e1b3a" stroke-width="3" stroke-linejoin="round"><path fill="#fff" d="M20 4 35 12 20 20 5 12z"/><path fill="none" d="M5 12v16l15 8V20z"/><path fill="#1e1b3a" fill-opacity=".25" d="M35 12v16l-15 8V20z"/></svg><span>Kubussen<small>ruimtelijk inzicht</small></span></div>
+    <div class="kaart k6"><svg viewBox="0 0 40 40"><path fill="#ffc533" d="m20 3 5 11 12 1-9 8 3 12-11-6-11 6 3-12-9-8 12-1z"/></svg><span>IQ-test<small>5, 10 of 25 minuten</small></span></div>
+  </div>
+
+  <p class="schermnaam">Een som in Sprint</p>
+  <div class="scherm">
+    <div class="label">Sprint<small>som 9 van 15</small></div>
+    <div class="klokje">18,4 s</div>
+    <div class="pitten"><i class="vol"></i><i class="vol"></i><i class="vol"></i><i class="vol"></i><i class="vol"></i><i class="vol"></i><i class="vol spook"></i><i class="vol"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="somkaart">7 × 16</div>
+    <div class="veld">112</div>
+    <div class="voor">+ 0,8 s voor</div>
+  </div>
+
+  <p class="schermnaam">Uitslag</p>
+  <div class="scherm">
+    <div class="label">Sprint<small>gemiddeld, alle bewerkingen</small></div>
+    <div class="omgedraaid">
+      <h3>34,27<small> s</small></h3>
+      <p>1,8 seconde sneller dan je vorige run</p>
+      <p>Nog 2,3 seconde tot goud.</p>
+    </div>
+    <div class="fiche">Zilver</div>
+    <div class="zij">Vorige run <b>36,10 s</b><br>Je record <b>33,10 s</b></div>
+    <div class="acties"><b>Nog een keer</b><span>Ander spel</span></div>
+  </div>
+</section>
+</body>
+</html>

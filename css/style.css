@@ -526,3 +526,156 @@ details.vraag p { margin-top: 0.5rem; }
 .janee.vier .knop { min-width: 7.6rem; }
 /* zand op wit is te flets voor de tijdbalk, daarom hier de donkere tint */
 body[data-spel="kleurwoord"] .balk-vul { background: var(--kleur-d); }
+
+/* de uitslag is er net: de knoppen doen nog even niets, zodat een tik die voor het spel bedoeld was niets start */
+.scherm.wacht { pointer-events: none; }
+
+/* ---- wat alleen op een telefoon of alleen op een breed scherm staat ---- */
+/* alleen-smal: staat er alleen op een telefoon. alleen-breed: staat er op een telefoon juist niet */
+.terug, .stand-kort, .paneel-achter { display: none; }
+.menu svg { display: none; }
+/* de keuzes voor de start zitten in een eigen vak. Op een computer merk je daar niets van, op een telefoon is het een paneel */
+.instel { display: contents; }
+.begin-zij > .doelveld { order: 1; }
+.instel > .naamveld { order: 2; }
+.begin-zij > .knoppen { order: 3; }
+/* de dagkaart ligt omgekeerd: de achterkant van een speelkaart, een ruitpatroon met een gele rand */
+.kaart.k-dag { --kleur: var(--inkt); --kleur-d: #0c0a1f; --op: #fff; background: repeating-linear-gradient(45deg, transparent 0 9px, rgba(255, 255, 255, 0.16) 9px 18px), repeating-linear-gradient(-45deg, transparent 0 9px, rgba(255, 255, 255, 0.16) 9px 18px), var(--inkt); box-shadow: 0 6px 0 var(--schaduw), inset 0 0 0 5px var(--inkt), inset 0 0 0 7px var(--zon); }
+@media (min-width: 521px) {
+  .alleen-smal { display: none !important; }
+}
+
+/* ---- telefoon: een eigen indeling, geen computerversie in het klein ---- */
+@media (max-width: 520px) {
+  .alleen-breed { display: none !important; }
+
+  /* kop: links het merk, rechts je level en je reeks. Tijdens een ronde blijft de kop zoals hij was */
+  body:not(.bezig) .kop { flex-wrap: nowrap; justify-content: space-between; min-height: 3.2rem; padding: 0.3rem 1rem 0.2rem; }
+  body:not(.bezig) .merk { display: flex; align-items: center; min-height: 2.7rem; font-size: 1.4rem; }
+  .stand-kort { display: flex; align-items: center; min-height: 2.6rem; padding: 0 0.95rem; border-radius: 999px; background: #fff; box-shadow: 0 3px 0 var(--schaduw); font-size: 0.85rem; text-decoration: none; white-space: nowrap; }
+  body[data-spel] .stand-kort { display: none; }
+  /* voor en na een spel staat er in plaats van het merk een weg terug */
+  body[data-spel]:not(.bezig) .merk { display: none; }
+  body[data-spel]:not(.bezig) .terug { display: flex; align-items: center; min-height: 2.7rem; font-weight: 700; text-decoration: none; }
+
+  /* menu: een balk onderaan, onder je duim. Binnen een spel is hij weg */
+  .menu { position: fixed; z-index: 6; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.15rem; margin: 0; padding: 0.3rem 0.35rem calc(0.3rem + env(safe-area-inset-bottom, 0px)); background: #fff; box-shadow: 0 -2px 0 var(--rand); }
+  body[data-spel] .menu { display: none; }
+  .menu a { display: grid; justify-items: center; align-content: center; gap: 0.1rem; min-height: 3.1rem; padding: 0.2rem 0; border-radius: 0.9rem; color: var(--zacht); font-size: 0.68rem; line-height: 1.15; white-space: nowrap; }
+  .menu a:hover { background: none; }
+  .menu a.actief { background: var(--tafel); color: var(--inkt); font-weight: 700; }
+  .menu svg { display: block; width: 1.5rem; height: 1.5rem; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  body:not([data-spel]) main { padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); }
+
+  /* knoppen waar je vinger op past: minstens 44 punten hoog */
+  .keuze { min-height: 2.75rem; padding-inline: 1.1rem; }
+  .tekstveld { min-height: 2.75rem; }
+  .knoppen .tekstknop { min-height: 2.75rem; padding: 0 0.3rem; }
+
+  /* startpagina: elke groep is een rij kaarten die je opzij veegt */
+  .scherm.start { gap: 0.5rem; }
+  .welkom { font-size: 0.95rem; font-weight: 400; color: var(--zacht); }
+  .tafel { gap: 0.35rem; }
+  .groep { gap: 0; }
+  .groep.eerst { order: -1; }
+  .groepkop { flex-wrap: nowrap; justify-content: space-between; padding: 0; }
+  .groepkop h2 { font-size: 1.2rem; }
+  /* de rij loopt door tot de rechterrand: het halve kaartje daar laat zien dat er meer ligt.
+     Links blijft een strook vrij, want vegen vanaf de linkerrand is op een iPhone "terug" */
+  .kaartrij { display: flex; align-items: flex-start; gap: 0.7rem; margin: 0 -1rem 0 -0.4rem; padding: 0.55rem 1rem 0.9rem 0.4rem; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scroll-padding-left: 0.4rem; scrollbar-width: none; }
+  .kaartrij::-webkit-scrollbar { display: none; }
+  .tafel .groep .kaartrij .kaart { flex: 0 0 40vw; aspect-ratio: 5 / 6.5; scroll-snap-align: start; border-radius: 1.05rem; }
+  .kaartrij .kaart-voet { padding-inline: 5cqw; }
+  .kaartrij .kaart-tekst, .kaartrij .kaart-onder { font-size: 8cqw; }
+  .tafel .groep .kaartrij .kaart:nth-child(odd) { transform: rotate(-1.2deg); }
+  .tafel .groep .kaartrij .kaart:nth-child(even) { transform: rotate(1.2deg); }
+  .tafel .groep .kaartrij .kaart:active { transform: scale(0.96); }
+
+  /* voor de start: een scherm zonder schuiven. De keuzes staan in een paneel achter de knop Aanpassen */
+  .scherm.begin { gap: 0.75rem; padding-top: 0.1rem; }
+  .spelbalk { display: flex; align-items: center; gap: 1rem; padding: 0.7rem 1.1rem; border-radius: 1.2rem; background: var(--kleur); color: var(--op); box-shadow: 0 6px 0 var(--kleur-d); }
+  .spelbalk .kaart-teken { position: static; flex: 0 0 5.4rem; }
+  .spelbalk strong { font-weight: 700; font-size: 1.7rem; line-height: 1.05; }
+  .scherm.begin { padding-bottom: 5.5rem; }
+  .begin-zij { justify-items: stretch; gap: 0.75rem; }
+  .begin-zij > .label { justify-self: start; }
+  /* Start staat vast onderaan het scherm, bij elk spel op dezelfde plek onder je duim */
+  .begin-zij > .knoppen { position: fixed; z-index: 5; left: 0; right: 0; bottom: 0; margin: 0; }
+  .begin-zij .intro { font-size: 1.08rem; }
+  .instel-kort { display: flex; align-items: center; gap: 0.8rem; padding: 0.7rem 0.75rem 0.7rem 1rem; border-radius: 1.1rem; background: #fff; }
+  .instel-kort > div { flex: 1; min-width: 0; }
+  .instel-kort h3 { font-size: 0.95rem; }
+  .instel-kort p { font-size: 0.9rem; font-weight: 400; color: var(--zacht); }
+  .instel-kort .knop { flex: none; min-height: 2.75rem; padding: 0.5rem 1rem; }
+  .doelen { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+  .doelen .fiche { width: 3.3rem; height: 3.3rem; border-width: 3px; outline-width: 2px; outline-offset: -8px; font-size: 0.62rem; }
+  .doelen b { font-size: 0.82rem; text-align: center; }
+  .begin-zij > details.hoe { order: 2; padding: 0 1rem; border-radius: 1.1rem; background: #fff; }
+  details.hoe summary { padding-block: 0.7rem; }
+  .begin-zij > details.hoe .lijst { margin: 0 0 0.9rem; }
+  .instel { display: none; }
+  .instel.open { position: fixed; z-index: 21; left: 0; right: 0; bottom: 0; display: grid; align-content: start; gap: 1rem; max-height: 88vh; overflow-y: auto; overscroll-behavior: contain; padding: 0 1rem calc(1.2rem + env(safe-area-inset-bottom, 0px)); border-radius: 1.4rem 1.4rem 0 0; background: var(--tafel); animation: paneel-op 0.22s ease-out; }
+  .instel.open.direct { animation: none; }
+  @keyframes paneel-op { from { transform: translateY(100%); } }
+  .instel-kop { order: -2; position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; margin: 0 -1rem; padding: 0.8rem 1rem 0.6rem; background: var(--tafel); box-shadow: 0 2px 0 var(--rand); }
+  .instel > .naamveld { order: -1; }
+  body.paneel-open { overflow: hidden; }
+  body.paneel-open .paneel-achter { position: fixed; z-index: 20; inset: 0; display: block; background: rgba(30, 27, 58, 0.5); }
+
+  /* uitslag: je score, je medaille en de twee knoppen staan in het eerste scherm */
+  .scherm.eind:not(.iq) { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 0.8rem 1rem; padding-top: 0.1rem; }
+  .eind:not(.iq) > .uitslagkaart { grid-column: 1 / -1; gap: 0.3rem; padding: 0.9rem 1.2rem 1.1rem; border-top-width: 0.8rem; }
+  .uitslag-hoofd { font-size: 1.15rem; }
+  .feiten { gap: 0.1rem; font-size: 0.92rem; }
+  .uitslag-zij { display: contents; }
+  .uitslag-zij .fiche { width: 5rem; height: 5rem; border-width: 4px; outline-offset: -12px; font-size: 0.95rem; }
+  .uitslag-zij .fiche.leeg { font-size: 0.72rem; }
+  .uitslag-zij > .knoppen { grid-column: 1 / -1; }
+  .uitslag-zij > .hoofdknoppen { position: sticky; bottom: 0; z-index: 2; flex-wrap: nowrap; margin: 0 -1rem; padding: 0.6rem 1rem calc(0.7rem + env(safe-area-inset-bottom, 0px)); background: var(--tafel); box-shadow: 0 -2px 0 var(--rand); }
+  .hoofdknoppen .knop.groot { flex: 1 1 0; padding: 0.75rem 0.5rem; font-size: 1.1rem; white-space: nowrap; }
+
+  /* de IQ-test kiezen: drie platte kaarten onder elkaar, links het aantal minuten */
+  .versies { gap: 0.8rem; }
+  .versiekaart { grid-template-columns: 4.4rem minmax(0, 1fr); column-gap: 1rem; padding: 0.7rem 1.1rem 0.9rem; border-top-width: 0.6rem; }
+  .versie-min { grid-column: 1; grid-row: 1; justify-self: center; align-self: end; font-size: 3rem; }
+  .versie-eenheid { grid-column: 1; grid-row: 2; justify-self: center; align-self: start; margin: 0; font-size: 0.85rem; }
+  .versiekaart strong { grid-column: 2; grid-row: 1; align-self: end; }
+  .versie-geeft { grid-column: 2; grid-row: 2; align-self: start; font-size: 0.92rem; }
+  /* de test die nog niet bestaat hoeft op een telefoon geen plek in te nemen */
+  .versiekaart.dicht { display: none; }
+  /* een link in kleine tekst: het raakvlak is hoger dan de letters */
+  .scherm .klein a { padding-block: 0.75rem; }
+
+  /* verzameling: hier staan op een telefoon ook je level, je reeks en je speeldagen */
+  .voortgang-smal { display: grid; gap: 0.9rem; }
+  .voortgang-smal .status, .voortgang-smal .stempelkaart { order: 0; width: 100%; margin: 0; }
+  .voortgang-smal .status > a { display: none; }
+  .voortgang-smal h2 { margin-top: 0.5rem; }
+  .spaarkaarten { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.7rem; }
+  .spaarkaart { padding: 0.55rem; border-radius: 0.9rem; }
+  .spaar-teken { font-size: 2.1rem; }
+  .spaarkaart strong { font-size: 0.8rem; }
+  .spaarkaart span:last-child { font-size: 0.68rem; }
+
+  /* uitleg: de hele regel van een vraag is de knop */
+  details.vraag { padding: 0 1.1rem; }
+  details.vraag summary { padding-block: 0.8rem; }
+  details.vraag[open] summary { padding-bottom: 0.2rem; }
+  details.vraag p:last-child { margin-bottom: 0.9rem; }
+}
+/* een smalle telefoon: de woorden in het menu iets kleiner, anders raken ze elkaar */
+@media (max-width: 380px) {
+  .menu a { font-size: 0.62rem; }
+}
+/* een kleine telefoon: het scherm voor de start nog wat dichter op elkaar */
+@media (max-width: 520px) and (max-height: 640px) {
+  body:not(.bezig) .kop { min-height: 2.9rem; padding: 0.15rem 1rem 0.1rem; }
+  .scherm.begin { gap: 0.55rem; padding-bottom: 5rem; }
+  .begin-zij { gap: 0.55rem; }
+  .begin-zij .intro { font-size: 1rem; }
+  .spelbalk { padding: 0.45rem 1rem; box-shadow: 0 5px 0 var(--kleur-d); }
+  .spelbalk .kaart-teken { flex-basis: 4.2rem; }
+  .spelbalk strong { font-size: 1.45rem; }
+  .instel-kort { padding-block: 0.5rem; }
+  .doelen .fiche { width: 2.8rem; height: 2.8rem; outline-offset: -7px; font-size: 0.56rem; }
+}

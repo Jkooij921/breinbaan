@@ -13,8 +13,14 @@
     const naam = location.hash.slice(1) || 'start';
     document.body.classList.remove('bezig');
     delete document.body.dataset.spel;
-    (PAGINAS[naam] || start)();
-    document.querySelectorAll('.menu a').forEach(a => a.classList.toggle('actief', a.getAttribute('href') === '#' + naam));
+    // Een adres zoals #spel-sprint is het scherm voor de start van een spel. Bestaat het adres niet, dan komt de startpagina.
+    if (PAGINAS[naam]) PAGINAS[naam]();
+    else if (!BB.oefenhal.open(app, naam)) start();
+    // In het menu licht de pagina op waar je bent. Alles wat met spelen te maken heeft hoort bij Spelen.
+    const actief = PAGINAS[naam] && naam !== 'iq' && naam !== 'oefenhal' && naam !== 'dev' ? naam : 'start';
+    document.querySelectorAll('.menu a').forEach(a => a.classList.toggle('actief', a.getAttribute('href') === '#' + actief));
+    // Op een telefoon staan je level en je reeks kort in de kop.
+    document.getElementById('stand').textContent = BB.voortgang.kort();
   }
   window.addEventListener('hashchange', toon);
   // Een link naar de pagina waar je al bent verandert het adres niet. Dan tekenen we de pagina zelf opnieuw.
@@ -91,7 +97,7 @@
       vraag('Hoe werken punten en levels?', 'Elke ronde levert 10 punten op. Daar komt iets bij voor een medaille, een nieuw record, de dagkaart en je eerste ronde van de dag. Met genoeg punten ga je een level omhoog. Elk level kost iets meer dan het vorige.'),
       vraag('Wat is een verrassing?', 'Na een ronde krijg je soms een omgekeerde kaart. Draai hem om en je krijgt bonuspunten of een bijzondere kaart voor je verzameling. Wanneer hij komt en wat erin zit, is toeval. Er zijn ' + BB.voortgang.KAARTEN.length + ' bijzondere kaarten.'),
       vraag('Wat is de dagkaart?', 'Elke dag ligt er een kaart omgekeerd. Draai hem om en je krijgt het spel van die dag, met voor iedereen dezelfde opgaven. Je eerste poging telt. De kaart van gisteren blijft een dag liggen.'),
-      vraag('Wat zijn speeldagen?', 'Op de startpagina staat een kalender. Elke dag waarop je speelt krijgt een stempel. Die teller loopt alleen op, ook als je reeks breekt. Bij 7, 14, 30, 60 en 100 speeldagen krijg je een ster.'),
+      vraag('Wat zijn speeldagen?', (BB.smal() ? 'Op de pagina Verzameling' : 'Op de startpagina') + ' staat een kalender. Elke dag waarop je speelt krijgt een stempel. Die teller loopt alleen op, ook als je reeks breekt. Bij 7, 14, 30, 60 en 100 speeldagen krijg je een ster.'),
       vraag('Wat is racen tegen je vorige ronde?', 'Bij Sprint en Tijdrace zie je twee banen. In de bovenste loop jij. In de onderste loopt je vorige ronde of je record mee, precies zo snel als je toen was. Zo zie je meteen of je voor of achter ligt.'),
       el('h2', null, 'De IQ-test'),
       vraag('Wat meet de test?', 'Hoe goed je patronen ziet en regels ontdekt. De volledige test meet ook hoeveel je kunt onthouden en hoe snel je werkt. Taal en ruimtelijk inzicht zitten er nog niet in.'),
@@ -99,7 +105,7 @@
       vraag('Klopt mijn IQ-uitslag?', 'Het is een eerste schatting. De omrekening is nog niet getest op echte mensen. Bij een psycholoog is de marge ongeveer 5 punten, hier ongeveer ' + N.marge[25] + '.',
         'Dit is geen officiële test. Gebruik de uitslag niet voor beslissingen over school, werk of gezondheid.'),
       vraag('Word ik slimmer van oefenen?', 'Je wordt beter in het spel dat je oefent. Onderzoek laat zien dat je IQ daar niet van stijgt. Daarom tellen de spellen niet mee voor je IQ-uitslag, en zegt je eerste test het meest.'),
-      el('a', { class: 'knop', href: '#start' }, 'Naar de kaarten'));
+      el('a', { class: 'knop alleen-breed', href: '#start' }, 'Naar de kaarten'));
     s.classList.add('breed', 'tekst');
   }
 

@@ -205,14 +205,21 @@ BB.voortgang = (function () {
       el('a', { class: 'tekstknop', href: '#verzameling' }, 'Verzameling: ' + heb.length + ' van ' + KAARTEN.length + ' bijzondere kaarten'));
   }
 
+  // De kop op een telefoon: level en reeks in een paar woorden. Wie erop tikt, komt bij de verzameling.
+  function kort() {
+    return 'Level ' + levelVan(BB.opslag.lees('punten', {}).totaal || 0) + ' · ' + dagen(reeksNu().lengte) + ' op rij';
+  }
+
   function verzameling(doel) {
     const heb = BB.opslag.lees('verzameling', []);
     const s = BB.scherm(doel,
       el('h1', null, 'Verzameling'),
+      // Op een telefoon staan level, reeks en speeldagen hier in plaats van op de startpagina.
+      el('div', { class: 'voortgang-smal alleen-smal' }, statusBlok(), stempelkaart(), el('h2', null, 'Bijzondere kaarten')),
       el('p', { class: 'intro' }, 'Je hebt ' + heb.length + ' van de ' + KAARTEN.length + ' bijzondere kaarten.'),
       el('p', { class: 'klein' }, 'Na een ronde krijg je soms een verrassing: bonuspunten of een bijzondere kaart. Welke kaart je krijgt is toeval. Een kaart die je al had levert ' + DUBBEL + ' punten op.'),
       el('div', { class: 'spaarkaarten' }, KAARTEN.map(k => spaarkaart(k, heb.includes(k.id)))),
-      el('a', { class: 'knop', href: '#start' }, 'Naar de kaarten'));
+      el('a', { class: 'knop alleen-breed', href: '#start' }, 'Naar de kaarten'));
     s.classList.add('breed');
   }
 
@@ -246,7 +253,7 @@ BB.voortgang = (function () {
 
   return {
     vandaag, gisteren, kortDatum, RANGEN, RUNS_VOOR_RANG, RUNS_IN_GEMIDDELDE, MAX_RESERVE, RESERVE_ELKE, KAARTEN,
-    drempels, rangVan, stand, stempel, stempelkaart, reeksNa, reeksNu, levelVan, levelStand, naRonde, beloningBlok, statusBlok, verzameling,
+    drempels, rangVan, stand, stempel, stempelkaart, reeksNa, reeksNu, levelVan, levelStand, naRonde, beloningBlok, statusBlok, kort, verzameling,
     dagSpel, bewaarBestand, zetTerug,
   };
 })();

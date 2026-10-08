@@ -81,6 +81,9 @@ BB.kaart = (function () {
       [['#ff5a4f', 23], ['#4aa3ff', 41], ['#3ccf5e', 59], ['#ffd23f', 77]].map(k =>
         '<circle cx="' + k[1] + '" cy="52" r="6.5" fill="' + k[0] + '" stroke="#fff" stroke-width="2.2"/>').join('') +
       '<circle cx="77" cy="52" r="10" fill="none" stroke="' + INKT + '" stroke-width="2.2"/>'),
+    // de dagkaart ligt omgekeerd: je weet nog niet welk spel erachter zit
+    dag: beeld('<circle cx="50" cy="34" r="26" fill="#000" opacity=".3"/><circle cx="50" cy="32" r="26" fill="var(--zon)"/>' +
+      '<text x="50" y="45" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="38" fill="' + INKT + '">?</text>'),
     // de klokvorm waarin scores zich verdelen, met jouw plek
     iq: beeld('<path d="M4 56C30 56 34 10 50 10S70 56 96 56" fill="rgba(255,255,255,.14)" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M4 56h92" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".6"/>' +
       '<path d="M66 56V30" stroke="var(--zon)" stroke-width="3" stroke-linecap="round"/><path fill="var(--zon)" d="m66 6 3.5 7.6 8.3.9-6.2 5.6 1.8 8.2L66 24l-7.4 4.3 1.8-8.2-6.2-5.6 8.3-.9z"/>'),
@@ -104,19 +107,20 @@ BB.kaart = (function () {
     kleurwoord: 'Kies de kleur van de letters',
   };
 
-  function inhoud(id, naam, onder, hoek) {
+  function inhoud(id, naam, onder, hoek, tekst) {
     return [
       hoek ? BB.el('span', { class: 'kaart-rang', title: 'Je rang' }, hoek) : null,
       BB.el('span', { class: 'kaart-teken', html: TEKEN[id] }),
       BB.el('span', { class: 'kaart-voet' },
         BB.el('span', { class: 'kaart-naam' }, naam),
-        BB.el('span', { class: 'kaart-tekst' }, TEKST[id]),
+        BB.el('span', { class: 'kaart-tekst' }, tekst || TEKST[id]),
         onder ? BB.el('span', { class: 'kaart-onder' }, onder) : null),
     ];
   }
   // Een kaart is een knop: klikken is kiezen. onder: bijvoorbeeld je record. hoek: je rang.
-  function el(id, naam, onder, klik, hoek) {
-    return BB.el('button', { class: 'kaart k-' + id, type: 'button', onclick: klik }, inhoud(id, naam, onder, hoek));
+  // tekst: een andere regel dan de vaste tekst van het spel, bijvoorbeeld bij de dagkaart.
+  function el(id, naam, onder, klik, hoek, tekst) {
+    return BB.el('button', { class: 'kaart k-' + id, type: 'button', onclick: klik }, inhoud(id, naam, onder, hoek, tekst));
   }
   // De grote kaart op het scherm voor de start van een spel. Geen knop, alleen beeld.
   function groot(id, naam) {

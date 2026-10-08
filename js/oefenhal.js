@@ -198,6 +198,23 @@ BB.oefenhal = (function () {
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(tekst).then(() => { knop.textContent = 'Gekopieerd'; }, vraag);
     else vraag();
   }
+  // ---- adressen: het scherm voor de start van elk spel heeft een eigen adres ----
+  // Daardoor brengt de terugknop van de telefoon of de browser je terug naar de kaarten, in plaats van weg van de site.
+  const ga = (doel, naam) => { if (location.hash === '#' + naam) open(doel, naam); else location.hash = '#' + naam; };
+  const naarStart = doel => { if ((location.hash || '#start') === '#start') menu(doel); else location.hash = '#start'; };
+  // Het paneel met keuzes op een telefoon: een stap terug doet het dicht. Zie begin().
+  let paneelDicht = null;
+  if (typeof window !== 'undefined') window.addEventListener('popstate', () => { if (paneelDicht) paneelDicht(); });
+  // Tekent het scherm dat bij een adres hoort. Geeft false als het adres niet (meer) bestaat.
+  function open(doel, naam) {
+    const spel = SPELLEN.find(sp => 'spel-' + sp.id === naam);
+    if (spel) { begin(doel, spel); return true; }
+    const dag = naam.startsWith('dag-') ? naam.slice(4) : null;
+    if (!dag || (dag !== V.vandaag() && dag !== V.gisteren()) || BB.opslag.lees('dagkaart', {})[dag]) return false;
+    begin(doel, dagSpel(dag), dag);
+    return true;
+  }
+
   // Een kaart per dag, omgekeerd op tafel. Wie hem gespeeld heeft, ziet zijn score. De kaart van gisteren
   // blijft liggen, zodat een gemiste avond niets kost.
   function dagkaart(doel) {
@@ -211,10 +228,19 @@ BB.oefenhal = (function () {
           el('div', null, el('strong', null, 'Dagkaart van ' + V.kortDatum(v)),
             el('span', null, spel.naam + ': ' + spel.toon(klaar.score) + (klaar.m ? ', ' + MEDAILLE[klaar.m].toLowerCase() : ''))),
           el('button', { class: 'tekstknop', type: 'button', onclick: e => deel(e.target, v, spel, klaar) }, 'Deel'))
-        : el('button', { class: 'kaart rug', type: 'button', onclick: () => begin(doel, spel, v) },
+        : el('button', { class: 'kaart rug', type: 'button', onclick: () => ga(doel, 'dag-' + v) },
           el('span', { class: 'kaart-naam' }, 'Dagkaart'), el('span', { class: 'kaart-onder' }, V.kortDatum(v))),
       klaar ? null : el('p', { class: 'klein' }, 'Vandaag voor iedereen dezelfde opgaven. Draai de kaart om.'),
-      gedaan[g] ? null : el('button', { class: 'tekstknop', type: 'button', onclick: () => begin(doel, dagSpel(g), g) }, 'De kaart van ' + V.kortDatum(g) + ' ligt er ook nog'));
+      gedaan[g] ? null : el('button', { class: 'tekstknop', type: 'button', onclick: () => ga(doel, 'dag-' + g) }, 'De kaart van ' + V.kortDatum(g) + ' ligt er ook nog'));
+  }
+  // Dezelfde dagkaart als gewone kaart, voor de eerste rij op een telefoon. tekst: wat er onder de naam staat.
+  function dagTegel(doel, datum, tekst) {
+    const klaar = BB.opslag.lees('dagkaart', {})[datum];
+    if (!klaar) return BB.kaart.el('dag', 'Dagkaart', V.kortDatum(datum), () => ga(doel, 'dag-' + datum), null, tekst);
+    const spel = SPELLEN.find(sp => sp.id === klaar.spel) || dagSpel(datum);
+    const kaart = BB.kaart.el(spel.id, 'Dagkaart', 'Tik om te delen', () => deel(kaart.querySelector('.kaart-onder'), datum, spel, klaar), null,
+      'Gedaan. ' + spel.naam + ': ' + spel.toon(klaar.score) + (klaar.m ? ', ' + MEDAILLE[klaar.m].toLowerCase() : ''));
+    return kaart;
   }
 
   // ---- de tafel met kaarten: de startpagina ----
@@ -225,22 +251,32 @@ BB.oefenhal = (function () {
     const kaartVan = spel => {
       const k = sleutel(spel, i), beste = lijst(k)[0], rang = (alleRuns[k] || {}).rang;
       // De rang staat in de hoek, zoals de waarde op een speelkaart.
-      return BB.kaart.el(spel.id, spel.naam, beste ? 'Record ' + spel.toon(beste.score) : null, () => begin(doel, spel), rang >= 0 ? V.RANGEN[rang][0] : null);
+      return BB.kaart.el(spel.id, spel.naam, beste ? 'Record ' + spel.toon(beste.score) : null, () => ga(doel, 'spel-' + spel.id), rang >= 0 ? V.RANGEN[rang][0] : null);
     };
+    const iqKaart = () => BB.kaart.el('iq', 'IQ-test', laatste ? 'Laatste: ' + BB.iqtest.kort(laatste) : null, () => { location.hash = '#iq'; });
     // De kaarten liggen per soort bij elkaar, met een kop erboven. Zo blijft een tafel met vijftien kaarten te overzien.
-    const stapel = (titel, tekst, kaarten) => el('section', { class: 'groep' },
-      el('div', { class: 'groepkop' }, el('h2', null, titel), el('span', { class: 'klein' }, tekst)),
+    // Op een telefoon is elke groep een rij die je opzij veegt. Daar staat het aantal kaarten in de kop, zodat je weet dat er meer zijn.
+    const stapel = (titel, tekst, kaarten, klasse) => el('section', { class: 'groep' + (klasse ? ' ' + klasse : '') },
+      el('div', { class: 'groepkop' }, el('h2', null, titel), tekst ? el('span', { class: 'klein alleen-breed' }, tekst) : null,
+        klasse ? null : el('span', { class: 'klein alleen-smal' }, kaarten.length + ' spellen')),
       el('div', { class: 'kaartrij' }, kaarten));
+    const v = V.vandaag(), g = V.gisteren(), gedaan = BB.opslag.lees('dagkaart', {});
     const s = BB.scherm(doel,
-      el('div', { class: 'held' },
+      el('div', { class: 'held alleen-breed' },
         el('h1', null, 'Reken, puzzel en test je IQ.'),
         el('p', null, 'Achter elke kaart zit een kort spel of een test. ' + BB.zeg('Klik', 'Tik') + ' op een kaart om hem te openen. Alles is gratis en je hebt geen account nodig.'),
         V.statusBlok(),
         dagkaart(doel),
         V.stempelkaart()),
+      // Op een telefoon is er geen ruimte voor de grote kop. Wie nog niet gespeeld heeft, krijgt een regel uitleg.
+      BB.opslag.lees('punten', {}).rondes > 0 ? null : el('p', { class: 'welkom alleen-smal' }, 'Tik op een kaart. Gratis, zonder account.'),
       el('div', { class: 'tafel' },
-        stapel('IQ-test', 'De enige kaart die een IQ-uitslag geeft', BB.kaart.el('iq', 'IQ-test', laatste ? 'Laatste: ' + BB.iqtest.kort(laatste) : null, () => { location.hash = '#iq'; })),
-        GROEPEN.map(g => stapel(g[0], g[1], SPELLEN.filter(spel => spel.groep === g[0]).map(kaartVan)))));
+        stapel('IQ-test', 'De enige kaart die een IQ-uitslag geeft', [iqKaart()], 'alleen-breed'),
+        GROEPEN.map(gr => stapel(gr[0], gr[1], SPELLEN.filter(spel => spel.groep === gr[0]).map(kaartVan))),
+        // Alleen op een telefoon: de dagkaart en de IQ-test samen in de eerste rij. Deze groep staat hier als laatste,
+        // zodat de kaarten op een computer precies zo blijven liggen als ze lagen. Het stijlblad zet hem bovenaan.
+        stapel('Begin hier', '', [dagTegel(doel, v, 'Elke dag een spel, voor iedereen gelijk'), iqKaart(),
+          gedaan[g] ? null : dagTegel(doel, g, 'Die van gisteren ligt er nog')], 'eerst alleen-smal')));
     s.classList.add('start');
   }
 
@@ -248,12 +284,18 @@ BB.oefenhal = (function () {
   // dag: de datum van de dagkaart. Dan liggen de instellingen vast.
   const WOORD = { '+': 'plus', '−': 'min', '×': 'keer', '÷': 'delen' };
   const doelTekst = (spel, d) => spel.lager ? 'binnen ' + maat(spel, d) : span(spel) ? 'span ' + maat(spel, d) + ' of hoger' : maat(spel, d) + ' of meer';
-  function begin(doel, spel, dag) {
+  // paneel: alleen op een telefoon. Staat het paneel met de keuzes open, dan blijft het open als het scherm opnieuw getekend wordt.
+  function begin(doel, spel, dag, paneel) {
     document.body.classList.remove('bezig');
     kleur(spel.id);
     const i = dag ? dagInst(dag) : inst(), k = sleutel(spel, i), beste = lijst(k)[0], doelen = spel.medailles(i);
     const runs = BB.opslag.lees('runs', {})[k] || {}, st = V.stand(runs.laatste, doelen, spel.lager);
-    const zet = wijzig => { wijzig(); BB.opslag.schrijf('oefen', Object.assign(inst(), dag ? { spook: i.spook } : i)); begin(doel, spel, dag); };
+    const zet = wijzig => {
+      wijzig();
+      BB.opslag.schrijf('oefen', Object.assign(inst(), dag ? { spook: i.spook } : i));
+      const open = doel.querySelector('.instel.open');
+      begin(doel, spel, dag, open ? { schuif: open.scrollTop } : null);
+    };
     const keuze = (tekst, aan, klik) => el('button', { type: 'button', class: 'keuze' + (aan ? ' aan' : ''), 'aria-pressed': aan, onclick: () => zet(klik) }, tekst);
     // Een vakje met een vinkje: aangevinkt doet mee.
     const vink = (tekst, aan, klik) => el('button', { type: 'button', class: 'keuze vink' + (aan ? ' aan' : ''), role: 'checkbox', 'aria-checked': aan ? 'true' : 'false', onclick: () => zet(klik) },
@@ -261,9 +303,11 @@ BB.oefenhal = (function () {
     const groep = (titel, knoppen, toelichting) => el('div', { class: 'veld' }, el('h3', null, titel), el('div', { class: 'keuzes' }, knoppen),
       toelichting ? el('p', { class: 'klein' }, toelichting) : null);
     const start = () => aftellen(doel, spel, dag);
-    const naam = el('input', { class: 'tekstveld', type: 'text', maxlength: 20, placeholder: 'Bijvoorbeeld Joran', value: BB.opslag.lees('speler', '') });
+    const naamNu = BB.opslag.lees('speler', '');
+    const naam = el('input', { class: 'tekstveld', type: 'text', maxlength: 20, placeholder: 'Bijvoorbeeld Joran', value: naamNu });
     naam.addEventListener('input', () => BB.opslag.schrijf('speler', naam.value.trim()));
-    naam.addEventListener('keydown', e => { if (e.key === 'Enter') { e.stopPropagation(); start(); } });
+    // In het paneel op een telefoon sluit Enter het paneel. Anders start Enter het spel.
+    naam.addEventListener('keydown', e => { if (e.key === 'Enter') { e.stopPropagation(); if (instel.classList.contains('open')) dicht(); else start(); } });
     const uitleg = spel.uitleg ? spel.uitleg(i) : null;
     // De lengte van de ronde, als die te kiezen is. De keuze wordt per spel onthouden.
     const ronde = RONDE[spel.id], rondeNu = ronde ? rondeVan(spel.id, i) : null;
@@ -272,35 +316,68 @@ BB.oefenhal = (function () {
     const rangRegel = !st ? 'Na ' + V.RUNS_VOOR_RANG + ' rondes krijg je een rang, van Zeven tot Aas.'
       : 'Je rang is ' + rangNaam(Math.max(runs.rang, st.nu)) + '.' + (st.nu < runs.rang ? ' Je vorm nu: ' + rangNaam(st.nu) + '.' : '') +
         (st.volgende == null ? '' : ' Voor ' + rangNaam(st.nu + 1) + ' moet je gemiddelde over je laatste ' + V.RUNS_IN_GEMIDDELDE + ' rondes ' + (spel.lager ? 'onder ' : 'boven ') + maat(spel, st.volgende) + ' komen.');
+    const recordRegel = beste ? 'Het record op dit apparaat: ' + spel.toon(beste.score) + ' door ' + beste.naam + '.' : '';
+    // De keuzes in een paar woorden, voor de telefoon. Daar staan de keuzes zelf in een paneel achter de knop Aanpassen.
+    const kort = [ronde ? ronde.bij(rondeNu) : null, spel.rekenen === true ? NIVEAUS[i.niveau].toLowerCase() : null, spel.rekenen ? i.ops.join(' ') : null,
+      spel.kiesRichting ? 'volgorde ' + richting(i).naam.toLowerCase() : null,
+      spel.race ? (i.spook === 'uit' ? 'zonder tegenstander' : i.spook === 'record' ? 'tegen je record' : 'tegen je vorige ronde') : null,
+      naamNu ? 'als ' + naamNu : 'zonder naam'].filter(Boolean).join(' · ');
+    // Het paneel schuift op een telefoon van onderen omhoog. Dichtdoen is hetzelfde als een stap terug,
+    // zodat de terugknop van de telefoon het paneel ook sluit. Op een computer staan de keuzes gewoon op de pagina.
+    const dicht = () => { if (history.state && history.state.paneel) history.back(); else begin(doel, spel, dag); };
+    const instel = el('div', { class: 'instel' },
+      el('div', { class: 'instel-kop alleen-smal' }, el('h2', null, 'Aanpassen'), el('button', { class: 'knop', type: 'button', onclick: dicht }, 'Klaar')),
+      !dag && ronde ? groep(ronde.vraag, ronde.keuzes.map(kz => keuze(kz[1], kz[0] === rondeNu, () => { i.ronde = Object.assign({}, i.ronde, { [spel.id]: kz[0] }); })),
+        ronde.uitleg(rondeNu) + ' Elke keuze heeft zijn eigen records.') : null,
+      !dag && spel.rekenen === true ? groep('Hoe moeilijk?', NIVEAUS.map((n, nr) => keuze(n, nr === i.niveau, () => { i.niveau = nr; }))) : null,
+      !dag && spel.rekenen ? groep('Welke sommen doen mee?', BEWERKINGEN.map(o => vink(o + ' ' + WOORD[o], i.ops.includes(o), () => {
+        const nieuw = BEWERKINGEN.filter(b => b === o ? !i.ops.includes(b) : i.ops.includes(b));
+        if (nieuw.length) i.ops = nieuw; // minstens een soort blijft aan
+      })), 'Een vinkje betekent: deze sommen krijg je. Je krijgt nu sommen zoals ' + voorbeelden(spel.rekenen === true ? i.niveau : 1) + '.') : null,
+      !dag && spel.kiesRichting ? groep('In welke volgorde typ je ze na?', BB.cijfers.SOORTEN.map(soort => keuze(soort.naam, soort.id === i.richting, () => { i.richting = soort.id; })), 'Voorbeeld: ' + richting(i).voorbeeld + '.') : null,
+      spel.race ? groep('Tegen wie race je?', SPOOK.map(sp => keuze(sp[1], i.spook === sp[0], () => { i.spook = sp[0]; })),
+        'Tijdens het spel zie je twee banen: jij, en daaronder ' + (i.spook === 'uit' ? 'niemand. Je speelt alleen tegen de klok.' : i.spook === 'record' ? 'je snelste ronde tot nu toe.' : 'je vorige ronde.')) : null,
+      el('div', { class: 'veld naamveld' }, el('h3', null, 'Hoe heet je?'), naam, el('p', { class: 'klein' }, 'Je naam komt bij je score in de lijst met records op dit apparaat.')));
+    function toonPaneel(direct) {
+      instel.classList.add('open');
+      instel.classList.toggle('direct', direct);
+      instel.setAttribute('role', 'dialog');
+      instel.setAttribute('aria-modal', 'true');
+      instel.setAttribute('aria-label', 'Aanpassen');
+      document.body.classList.add('paneel-open');
+      // Na het sluiten wordt het scherm opnieuw getekend, zodat de samenvatting klopt met wat je koos.
+      paneelDicht = () => begin(doel, spel, dag);
+      BB.opruim.push(() => { document.body.classList.remove('paneel-open'); paneelDicht = null; });
+    }
+    const groot = BB.kaart.groot(spel.id, spel.naam);
+    groot.classList.add('alleen-breed');
     const s = BB.scherm(doel,
-      BB.kaart.groot(spel.id, spel.naam),
+      groot,
+      // Op een telefoon is de grote kaart een smalle balk: de tekening en de naam.
+      el('div', { class: 'spelbalk alleen-smal' }, el('span', { class: 'kaart-teken', html: BB.kaart.TEKEN[spel.id] }), el('strong', null, spel.naam)),
       el('div', { class: 'begin-zij' },
         dag ? el('span', { class: 'label' }, 'Dagkaart van ' + V.kortDatum(dag)) : null,
         el('p', { class: 'intro' }, tekstVan(spel, i)),
-        dag ? el('p', { class: 'klein' }, 'Iedereen krijgt vandaag dezelfde opgaven. Je eerste poging telt.' +
-          (ronde || spel.rekenen ? ' Bij de dagkaart valt er niets te kiezen, zodat iedereen hetzelfde speelt.' : '') +
-          (spel.kiesRichting ? ' Volgorde: ' + richting(i).naam.toLowerCase() + '.' : '')) : null,
-        // Wie het spel nog niet gespeeld heeft, ziet de uitleg open staan.
-        uitleg ? el('details', { class: 'hoe', open: beste ? null : '' }, el('summary', null, 'Hoe werkt het?'),
+        dag ? el('p', { class: 'klein' }, 'Iedereen krijgt vandaag dezelfde opgaven. Je eerste poging telt.',
+          el('span', { class: 'alleen-breed' }, (ronde || spel.rekenen ? ' Bij de dagkaart valt er niets te kiezen, zodat iedereen hetzelfde speelt.' : '') +
+            (spel.kiesRichting ? ' Volgorde: ' + richting(i).naam.toLowerCase() + '.' : ''))) : null,
+        // Wie het spel nog niet gespeeld heeft, ziet de uitleg open staan. Op een telefoon staat hij dicht, achter een tik.
+        uitleg ? el('details', { class: 'hoe', open: beste || BB.smal() ? null : '' }, el('summary', null, 'Hoe werkt het?'),
           el('ul', { class: 'lijst' }, uitleg.map(zin => el('li', null, zin)))) : null,
-        !dag && ronde ? groep(ronde.vraag, ronde.keuzes.map(kz => keuze(kz[1], kz[0] === rondeNu, () => { i.ronde = Object.assign({}, i.ronde, { [spel.id]: kz[0] }); })),
-          ronde.uitleg(rondeNu) + ' Elke keuze heeft zijn eigen records.') : null,
-        !dag && spel.rekenen === true ? groep('Hoe moeilijk?', NIVEAUS.map((n, nr) => keuze(n, nr === i.niveau, () => { i.niveau = nr; }))) : null,
-        !dag && spel.rekenen ? groep('Welke sommen doen mee?', BEWERKINGEN.map(o => vink(o + ' ' + WOORD[o], i.ops.includes(o), () => {
-          const nieuw = BEWERKINGEN.filter(b => b === o ? !i.ops.includes(b) : i.ops.includes(b));
-          if (nieuw.length) i.ops = nieuw; // minstens een soort blijft aan
-        })), 'Een vinkje betekent: deze sommen krijg je. Je krijgt nu sommen zoals ' + voorbeelden(spel.rekenen === true ? i.niveau : 1) + '.') : null,
-        !dag && spel.kiesRichting ? groep('In welke volgorde typ je ze na?', BB.cijfers.SOORTEN.map(soort => keuze(soort.naam, soort.id === i.richting, () => { i.richting = soort.id; })), 'Voorbeeld: ' + richting(i).voorbeeld + '.') : null,
-        spel.race ? groep('Tegen wie race je?', SPOOK.map(sp => keuze(sp[1], i.spook === sp[0], () => { i.spook = sp[0]; })),
-          'Tijdens het spel zie je twee banen: jij, en daaronder ' + (i.spook === 'uit' ? 'niemand. Je speelt alleen tegen de klok.' : i.spook === 'record' ? 'je snelste ronde tot nu toe.' : 'je vorige ronde.')) : null,
-        el('div', { class: 'veld' }, el('h3', null, 'Wat kun je halen?'),
+        el('div', { class: 'instel-kort alleen-smal' },
+          el('div', null, el('h3', null, dag ? 'Vaste instellingen' : 'Je instellingen'), el('p', null, kort)),
+          el('button', { class: 'knop stil', type: 'button', onclick: () => { history.pushState({ paneel: true }, ''); toonPaneel(false); } }, 'Aanpassen')),
+        instel,
+        el('div', { class: 'veld doelveld' }, el('h3', null, 'Wat kun je halen?'),
           el('div', { class: 'doelen' }, doelen.map((d, n) => el('div', null, BB.kaart.fiche(n + 1, MEDAILLE[n + 1]), el('b', null, doelTekst(spel, d))))),
-          el('p', { class: 'klein' }, rangRegel + (beste ? ' Het record op dit apparaat: ' + spel.toon(beste.score) + ' door ' + beste.naam + '.' : ''))),
-        el('div', { class: 'veld' }, el('h3', null, 'Hoe heet je?'), naam, el('p', { class: 'klein' }, 'Je naam komt bij je score in de lijst met records op dit apparaat.')),
+          el('p', { class: 'klein alleen-breed' }, rangRegel + (beste ? ' ' + recordRegel : '')),
+          beste ? el('p', { class: 'klein alleen-smal' }, recordRegel) : null),
         el('div', { class: 'knoppen' },
           el('button', { class: 'knop groot', type: 'button', onclick: start }, 'Start'),
-          el('button', { class: 'knop stil', type: 'button', onclick: () => menu(doel) }, 'Terug naar de kaarten'))));
+          el('button', { class: 'knop stil alleen-breed', type: 'button', onclick: () => naarStart(doel) }, 'Terug naar de kaarten'))),
+      el('div', { class: 'paneel-achter', onclick: dicht }));
     s.classList.add('begin');
+    if (paneel) { toonPaneel(true); instel.scrollTop = paneel.schuif; }
     BB.opEnter(start);
   }
 
@@ -788,11 +865,11 @@ BB.oefenhal = (function () {
         m ? BB.kaart.fiche(m, MEDAILLE[m]) : el('span', { class: 'fiche leeg' }, 'Nog geen medaille'),
         volgende,
         // Stoppen is net zo'n goede keuze als doorgaan. Daarom zijn de twee knoppen even groot.
-        el('div', { class: 'knoppen' },
+        el('div', { class: 'knoppen hoofdknoppen' },
           el('button', { class: 'knop groot', type: 'button', onclick: opnieuw }, 'Nog een keer'),
-          el('button', { class: 'knop groot stil', type: 'button', onclick: () => menu(doel) }, 'Klaar voor nu')),
+          el('button', { class: 'knop groot stil', type: 'button', onclick: () => naarStart(doel) }, 'Klaar voor nu')),
         el('div', { class: 'knoppen' },
-          el('button', { class: 'tekstknop', type: 'button', onclick: () => begin(doel, spel) }, 'Instellingen'),
+          el('button', { class: 'tekstknop', type: 'button', onclick: () => ga(doel, 'spel-' + spel.id) }, 'Instellingen'),
           dag && telt ? el('button', { class: 'tekstknop', type: 'button', onclick: e => deel(e.target, dag, spel, { score: res.score, m }) }, 'Deel je dagkaart') : null)),
       el('div', { class: 'uitslag-onder' },
         beloning ? V.beloningBlok(beloning) : null,
@@ -801,7 +878,10 @@ BB.oefenhal = (function () {
         res.extra,
         el('h3', null, 'Records op dit apparaat'),
         tabel(spel, top, plek, true)));
-    s.classList.add('eind');
+    // Wie nog op de toetsen tikt als de tijd om is, mag niet per ongeluk "Nog een keer" of "Klaar voor nu" raken.
+    // Daarom doen de knoppen het eerste moment niets.
+    s.classList.add('eind', 'wacht');
+    BB.later(() => s.classList.remove('wacht'), 600);
     telOp(getal, res.score, spel.toon);
     BB.opEnter(opnieuw);
   }
@@ -843,11 +923,12 @@ BB.oefenhal = (function () {
           el('h3', null, b.spel.naam), el('p', { class: 'klein' }, instellingTekst(b.spel, b.k)), tabel(b.spel, alles[b.k], 0, true))))
         : el('p', null, 'Er zijn nog geen scores. Speel een spel, dan staat je score hier.'),
       blokken.length && leeg.length ? el('p', { class: 'klein' }, 'Nog niet gespeeld: ' + leeg.join(', ') + '.') : null,
-      el('a', { class: 'knop', href: '#start' }, 'Naar de kaarten'));
+      // Op een telefoon staat Spelen al in het menu onderaan.
+      el('a', { class: 'knop alleen-breed', href: '#start' }, 'Naar de kaarten'));
     s.classList.add('breed');
   }
 
   // De regels en de teksten gaan mee naar buiten voor test/controle.js.
-  return { menu, ranglijst, SPELLEN, GROEPEN, RONDE, sleutel, instellingTekst, rondeUit, tekstVan,
+  return { menu, open, ranglijst, SPELLEN, GROEPEN, RONDE, sleutel, instellingTekst, rondeUit, tekstVan,
     regels: { versnelTijd, BERG, bergNiveau, bergStap, tienNiveaus, PUZZEL, TAAK, TIEN } };
 })();

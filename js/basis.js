@@ -63,6 +63,8 @@ BB.zeg = function (toetsenbord, aanraak) { return BB.aanraak() ? aanraak : toets
 // Een knop met de toets erbij die hetzelfde doet. Op een aanraakscherm staat die toets er niet bij.
 BB.metToets = function (tekst, toets) { return BB.aanraak() ? tekst : tekst + ' (' + toets + ')'; };
 BB.TYP = BB.zeg('Typ het antwoord en druk op Enter.', 'Tik het antwoord in en tik op OK.');
+// Een smal scherm, zoals een telefoon die rechtop staat. Dezelfde grens als in css/style.css.
+BB.smal = function () { return typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(max-width: 520px)').matches; };
 
 if (typeof document !== 'undefined') {
   BB.el = function (tag, attrs, ...kinderen) {

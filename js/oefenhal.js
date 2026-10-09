@@ -10,7 +10,14 @@ BB.oefenhal = (function () {
   // Brons is ruim: bijna iedereen haalt het in de eerste ronde. Een goed begin houdt mensen binnen.
   const TEMPO = [[6, 3, 2], [12, 6, 4], [24, 12, 8]];
 
-  const inst = () => Object.assign({ niveau: 1, ops: BEWERKINGEN.slice(), spook: 'vorige', richting: 'vooruit', ronde: {} }, BB.opslag.lees('oefen', {}));
+  const inst = () => {
+    const i = Object.assign({ niveau: 1, ops: BEWERKINGEN.slice(), spook: 'vorige', richting: 'vooruit', ronde: {}, variant: {} }, BB.opslag.lees('oefen', {}));
+    // Een variant die (nog) op slot zit, doet niet mee.
+    const gekozen = i.variant || {};
+    i.variant = {};
+    for (const id in gekozen) if (BB.baan.variantOpen(gekozen[id])) i.variant[id] = gekozen[id];
+    return i;
+  };
   const spelerNaam = () => BB.opslag.lees('speler', '') || 'Anoniem';
   const meerGoed = d => Math.abs(d) + (d > 0 ? ' meer goed' : ' minder goed');
   const hoger = d => BB.komma(Math.abs(d)) + (d > 0 ? ' hoger' : ' lager');
@@ -21,8 +28,9 @@ BB.oefenhal = (function () {
   const rekenSleutel = i => i.niveau + '|' + i.ops.join('');
   const rekenBij = i => NIVEAUS[i.niveau].toLowerCase() + ', ' + i.ops.join(' ');
   const richting = i => BB.cijfers.SOORTEN.find(s => s.id === i.richting);
-  const hartjes = n => el('span', { class: 'hartjes', 'aria-label': n + ' levens over' },
-    [0, 1, 2].map(k => el('span', { class: 'hart' + (k < n ? '' : ' op'), html: '<svg viewBox="0 0 40 40"><path fill="currentColor" d="' + BB.kaart.HART + '"/></svg>' })));
+  // totaal: met hoeveel levens je begon. Bij de variant met een leven staat er dus een hartje.
+  const hartjes = (n, totaal) => el('span', { class: 'hartjes', 'aria-label': n + (n === 1 ? ' leven over' : ' levens over') },
+    Array.from({ length: totaal || LEVENS }, (x, k) => el('span', { class: 'hart' + (k < n ? '' : ' op'), html: '<svg viewBox="0 0 40 40"><path fill="currentColor" d="' + BB.kaart.HART + '"/></svg>' })));
 
   // ---- hoe lang een ronde duurt: bij sommige spellen kies je dat zelf. Elke keuze heeft een eigen ranglijst ----
   // kaal: de keuze die niets extra in de sleutel van de ranglijst zet. Dat is de vorm die al bestond voordat er
@@ -49,6 +57,21 @@ BB.oefenhal = (function () {
   // Zet de keuze achter de rest van de sleutel, behalve bij de kale keuze.
   const metRonde = (basis, id, i) => { const v = rondeVan(id, i); return v === RONDE[id].kaal ? basis : (basis ? basis + '|' : '') + v; };
   const puzzelTekst = (vraag, id) => i => vraag + (tien(id, i) ? ' ' + TIEN + ' opgaven, van makkelijk naar moeilijk.' : ' Je speelt door tot je drie fouten hebt.');
+
+  // ---- varianten: een andere manier om hetzelfde spel te spelen. Je speelt ze vrij met levels (zie baan.js) ----
+  // Een spel heeft hooguit een variant, en elke variant heeft zijn eigen records. De dagkaart is altijd het gewone spel.
+  const BLIND_MS = 2000;
+  const VARIANT = {
+    blind: { naam: 'Blind', spellen: ['sprint', 'tijdrace'], uitleg: 'De som verdwijnt na ' + (BLIND_MS / 1000) + ' seconden. Onthoud hem terwijl je rekent.' },
+    achteruit: { naam: 'Achteruit', spellen: ['tikken'], uitleg: 'Je begint bij het hoogste getal en tikt terug naar 1.' },
+    haast: { naam: 'Haast', spellen: ['patronen', 'reeksen', 'kubussen', 'spiegelbeeld'], uitleg: 'Je krijgt per opgave de helft van de tijd.' },
+    omgekeerd: { naam: 'Omgekeerd', spellen: ['kleurwoord'], uitleg: 'Je kiest het woord dat er staat, niet de kleur van de letters.' },
+    eenleven: { naam: 'Eén leven', spellen: ['overleven'], uitleg: 'Je hebt een leven in plaats van drie. De eerste fout is het einde.' },
+  };
+  const variantBij = id => Object.keys(VARIANT).find(v => VARIANT[v].spellen.includes(id)) || null;
+  // De variant die bij dit spel gekozen is, of null voor het gewone spel.
+  const variantVan = (id, i) => { const v = (i.variant || {})[id]; return v && v === variantBij(id) ? v : null; };
+  const puzzelTijd = (p, haast) => haast ? Math.floor(p.tijd / 2) : p.tijd;
 
   // ---- de regels van Versnelling en Bergop, los van het scherm zodat ze te testen zijn ----
   // Versnelling: de eerste som krijgt acht seconden. Na elk goed antwoord vijf procent minder, tot anderhalve seconde.
@@ -79,9 +102,9 @@ BB.oefenhal = (function () {
       toon: aantalGoed, verschil: meerGoed,
       medailles: i => TEMPO[i.niveau].map(t => Math.round(rondeVan('tijdrace', i) / t)),
       speel: (doel, i, ctx, klaar) => rekenspel(doel, 'tijdrace', i, ctx, klaar) },
-    { id: 'overleven', groep: 'Rekenen', naam: 'Overleven', tekst: 'Drie levens. De sommen worden moeilijker en de klok tikt mee.',
+    { id: 'overleven', groep: 'Rekenen', naam: 'Overleven', tekst: i => (variantVan('overleven', i) ? 'Eén leven.' : 'Drie levens.') + ' De sommen worden moeilijker en de klok tikt mee.',
       rekenen: 'ops', sleutel: i => '|' + i.ops.join(''), bij: i => i.ops.join(' '), toon: aantalGoed, verschil: meerGoed,
-      medailles: () => [5, 15, 25],
+      medailles: i => variantVan('overleven', i) ? [3, 10, 18] : [5, 15, 25],
       speel: (doel, i, ctx, klaar) => rekenspel(doel, 'overleven', i, ctx, klaar) },
     // Versnelling: op moeilijk is acht seconden al krap, daarom ligt brons daar bij een enkele som.
     { id: 'versnelling', groep: 'Rekenen', naam: 'Versnelling', tekst: 'Elke som krijgt iets minder tijd dan de vorige, tot je een fout maakt of te laat bent.',
@@ -126,7 +149,7 @@ BB.oefenhal = (function () {
     { id: 'spiegelbeeld', groep: 'Puzzels', naam: 'Spiegelbeeld', tekst: puzzelTekst('Is de rechter figuur gedraaid of gespiegeld?', 'spiegelbeeld'),
       sleutel: i => metRonde('', 'spiegelbeeld', i), bij: i => rondeBij('spiegelbeeld', i), toon: aantalGoed, verschil: meerGoed,
       medailles: i => tien('spiegelbeeld', i) ? [5, 8, 9] : [3, 10, 18],
-      uitleg: () => BB.spiegelbeeld.uitleg.concat(BB.zeg('Druk J voor gedraaid en F voor gespiegeld.', 'Tik op de knop Gedraaid of op de knop Gespiegeld.') + ' Je hebt ' + PUZZEL.spiegelbeeld.tijd + ' seconden per opgave en hogere niveaus hebben meer vierkantjes.'),
+      uitleg: i => BB.spiegelbeeld.uitleg.concat(BB.zeg('Druk J voor gedraaid en F voor gespiegeld.', 'Tik op de knop Gedraaid of op de knop Gespiegeld.') + ' Je hebt ' + puzzelTijd(PUZZEL.spiegelbeeld, variantVan('spiegelbeeld', i)) + ' seconden per opgave en hogere niveaus hebben meer vierkantjes.'),
       speel: (doel, i, ctx, klaar) => puzzelspel(doel, PUZZEL.spiegelbeeld, tien('spiegelbeeld', i), ctx, klaar) },
     // Controleren: de rijen worden langer, dus twee keer zoveel tijd geeft minder dan twee keer zoveel punten.
     { id: 'controleren', groep: 'Tempo', naam: 'Controleren', tekst: i => 'Bekijk twee rijen cijfers en zeg of ze gelijk zijn, zo vaak mogelijk in ' + rondeVan('controleren', i) + ' seconden.',
@@ -134,24 +157,30 @@ BB.oefenhal = (function () {
       medailles: i => ({ 30: [3, 7, 11], 60: [6, 13, 20], 120: [11, 22, 33] })[rondeVan('controleren', i)],
       uitleg: () => BB.controleren.uitleg,
       speel: (doel, i, ctx, klaar) => tempospel(doel, TAAK.controleren, rondeVan('controleren', i), ctx, klaar) },
-    { id: 'tikken', groep: 'Tempo', naam: 'Getallen tikken', tekst: i => 'Tik de getallen 1 tot en met ' + Math.pow(rondeVan('tikken', i), 2) + ' zo snel mogelijk op volgorde aan.',
+    { id: 'tikken', groep: 'Tempo', naam: 'Getallen tikken', tekst: i => variantVan('tikken', i)
+      ? 'Tik de getallen van ' + Math.pow(rondeVan('tikken', i), 2) + ' terug naar 1 zo snel mogelijk aan.'
+      : 'Tik de getallen 1 tot en met ' + Math.pow(rondeVan('tikken', i), 2) + ' zo snel mogelijk op volgorde aan.',
       // De tijden liggen hier dicht bij elkaar. Daarom het verschil in honderdsten en de doelen in tienden van seconden.
       lager: true, sleutel: i => metRonde('', 'tikken', i), bij: i => rondeBij('tikken', i), toon: BB.fmtTijd, verschil: d => sneller(d, 2),
       maat: x => BB.komma(x / 1000, x % 1000 ? 1 : 0) + ' s', bijna: 1000,
       medailles: i => ({ 3: [12000, 7000, 5500], 4: [40000, 17000, 13000], 5: [90000, 40000, 28000] })[rondeVan('tikken', i)],
-      uitleg: () => BB.tikken.uitleg,
+      uitleg: i => variantVan('tikken', i) ? ['Je ziet een veld met getallen door elkaar. Tik ze van hoog naar laag aan: eerst het hoogste getal, dan steeds een lager, tot je bij 1 bent.'].concat(BB.tikken.uitleg.slice(1)) : BB.tikken.uitleg,
       speel: (doel, i, ctx, klaar) => tikspel(doel, rondeVan('tikken', i), ctx, klaar) },
-    { id: 'kleurwoord', groep: 'Tempo', naam: 'Kleurwoord', tekst: i => 'Kies zo vaak mogelijk in ' + rondeVan('kleurwoord', i) + ' seconden de kleur van de letters, niet het woord dat er staat.',
+    // Omgekeerd: het woord lezen gaat vanzelf en is dus makkelijker dan de kleur noemen. Daarom liggen de medailles daar hoger.
+    { id: 'kleurwoord', groep: 'Tempo', naam: 'Kleurwoord', tekst: i => 'Kies zo vaak mogelijk in ' + rondeVan('kleurwoord', i) + ' seconden ' +
+      (variantVan('kleurwoord', i) ? 'het woord dat er staat, niet de kleur van de letters.' : 'de kleur van de letters, niet het woord dat er staat.'),
       sleutel: i => metRonde('', 'kleurwoord', i), bij: i => rondeBij('kleurwoord', i), toon: punten, verschil: meerPunten, eenheid: 'punten',
-      medailles: i => [20, 40, 55].map(m => Math.round(m * rondeVan('kleurwoord', i) / 60)),
-      uitleg: () => BB.kleurwoord.uitleg,
-      speel: (doel, i, ctx, klaar) => tempospel(doel, TAAK.kleurwoord, rondeVan('kleurwoord', i), ctx, klaar) },
+      medailles: i => (variantVan('kleurwoord', i) ? [25, 45, 60] : [20, 40, 55]).map(m => Math.round(m * rondeVan('kleurwoord', i) / 60)),
+      uitleg: i => variantVan('kleurwoord', i) ? [BB.kleurwoord.uitleg[0], 'Kies het woord dat er staat, niet de kleur van de letters. Staat er "rood" in blauwe letters, dan is het antwoord rood.'].concat(BB.kleurwoord.uitleg.slice(2)) : BB.kleurwoord.uitleg,
+      speel: (doel, i, ctx, klaar) => tempospel(doel, ctx.variant ? TAAK.omgekeerd : TAAK.kleurwoord, rondeVan('kleurwoord', i), ctx, klaar) },
   ];
   // De koppen op de startpagina, met in een paar woorden wat je in die groep doet.
   const GROEPEN = [['Rekenen', 'Sommen uit je hoofd, op tempo'], ['Geheugen', 'Onthouden terwijl je met iets anders bezig bent'],
     ['Puzzels', 'Regels ontdekken en vormen draaien in je hoofd'], ['Tempo', 'Snel en precies kijken en kiezen']];
   const tekstVan = (spel, i) => typeof spel.tekst === 'function' ? spel.tekst(i) : spel.tekst;
-  const sleutel = (spel, i) => spel.id + '|' + spel.sleutel(i);
+  // De variant staat achteraan in de sleutel, achter een golfje. Zo blijven de sleutels van het gewone spel wat ze waren.
+  const sleutel = (spel, i) => spel.id + '|' + spel.sleutel(i) + (variantVan(spel.id, i) ? '~' + variantVan(spel.id, i) : '');
+  const zonderVariant = k => k.split('~')[0], variantUit = k => VARIANT[k.split('~')[1]] ? k.split('~')[1] : null;
   const beter = (spel, a, b) => spel.lager ? a < b : a > b;
   const kleur = id => { document.body.dataset.spel = id; };
 
@@ -182,14 +211,14 @@ BB.oefenhal = (function () {
   }
 
   // ---- wat blijft liggen tussen twee bezoeken: rang, dagkaart en stempelkaart ----
-  const V = BB.voortgang;
+  const V = BB.voortgang, B = BB.baan;
   const span = spel => spel.id === 'rekenspan' || spel.id === 'cijfers';
   // Een drempel of gemiddelde in de eenheid van het spel, ook als het geen heel getal is.
   const maat = (spel, x) => spel.maat ? spel.maat(x) : spel.lager ? BB.fmtKlok(x) : span(spel) ? BB.komma(x)
     : BB.komma(x, Number.isInteger(x) ? 0 : 1) + ' ' + (spel.eenheid || 'goed');
   const rangNaam = n => V.RANGEN[n][1];
   // De dagkaart heeft vaste instellingen, zodat iedereen dezelfde opgaven krijgt. Ook de lengte van de ronde is de standaard.
-  const dagInst = datum => Object.assign(inst(), { niveau: 1, ops: BEWERKINGEN.slice(), ronde: {}, richting: ['vooruit', 'achteruit', 'gesorteerd'][V.dagSpel('richting-' + datum, 3)] });
+  const dagInst = datum => Object.assign(inst(), { niveau: 1, ops: BEWERKINGEN.slice(), ronde: {}, variant: {}, richting: ['vooruit', 'achteruit', 'gesorteerd'][V.dagSpel('richting-' + datum, 3)] });
   const dagSpel = datum => SPELLEN[V.dagSpel(datum, SPELLEN.length)];
 
   function deel(knop, datum, spel, r) {
@@ -208,7 +237,7 @@ BB.oefenhal = (function () {
   // Tekent het scherm dat bij een adres hoort. Geeft false als het adres niet (meer) bestaat.
   function open(doel, naam) {
     const spel = SPELLEN.find(sp => 'spel-' + sp.id === naam);
-    if (spel) { begin(doel, spel); return true; }
+    if (spel) { if (B.spelOpen(spel.id)) begin(doel, spel); else opSlot(doel, spel); return true; }
     const dag = naam.startsWith('dag-') ? naam.slice(4) : null;
     if (!dag || (dag !== V.vandaag() && dag !== V.gisteren()) || BB.opslag.lees('dagkaart', {})[dag]) return false;
     begin(doel, dagSpel(dag), dag);
@@ -249,35 +278,76 @@ BB.oefenhal = (function () {
     delete document.body.dataset.spel;
     const i = inst(), pogingen = BB.opslag.lees('iqpogingen', []), laatste = pogingen[pogingen.length - 1], alleRuns = BB.opslag.lees('runs', {});
     const kaartVan = spel => {
+      // Een spel op slot ligt er wel, met het level erbij waarop het opengaat. Zo zie je waar je naartoe speelt.
+      if (!B.spelOpen(spel.id)) {
+        const dicht = BB.kaart.el(spel.id, spel.naam, 'Op slot tot level ' + B.levelVoor('spel', spel.id), () => ga(doel, 'spel-' + spel.id));
+        dicht.classList.add('dicht');
+        dicht.prepend(el('span', { class: 'kaart-slot', html: SLOT }));
+        return dicht;
+      }
       const k = sleutel(spel, i), beste = lijst(k)[0], rang = (alleRuns[k] || {}).rang;
       // De rang staat in de hoek, zoals de waarde op een speelkaart.
       return BB.kaart.el(spel.id, spel.naam, beste ? 'Record ' + spel.toon(beste.score) : null, () => ga(doel, 'spel-' + spel.id), rang >= 0 ? V.RANGEN[rang][0] : null);
     };
+    // Per groep eerst de spellen die open zijn, dan de spellen op slot in de volgorde waarin ze opengaan.
+    const inGroep = naam => SPELLEN.filter(spel => spel.groep === naam).map((spel, n) => [B.spelOpen(spel.id) ? 0 : B.levelVoor('spel', spel.id), n, spel])
+      .sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(x => x[2]);
     const iqKaart = () => BB.kaart.el('iq', 'IQ-test', laatste ? 'Laatste: ' + BB.iqtest.kort(laatste) : null, () => { location.hash = '#iq'; });
     // De kaarten liggen per soort bij elkaar, met een kop erboven. Zo blijft een tafel met vijftien kaarten te overzien.
     // Op een telefoon is elke groep een rij die je opzij veegt. Daar staat het aantal kaarten in de kop, zodat je weet dat er meer zijn.
-    const stapel = (titel, tekst, kaarten, klasse) => el('section', { class: 'groep' + (klasse ? ' ' + klasse : '') },
+    // rechts: wat er op een telefoon rechts in de kop staat in plaats van het aantal spellen.
+    const stapel = (titel, tekst, kaarten, klasse, rechts) => el('section', { class: 'groep' + (klasse ? ' ' + klasse : '') },
       el('div', { class: 'groepkop' }, el('h2', null, titel), tekst ? el('span', { class: 'klein alleen-breed' }, tekst) : null,
-        klasse ? null : el('span', { class: 'klein alleen-smal' }, kaarten.length + ' spellen')),
+        klasse ? rechts || null : el('span', { class: 'klein alleen-smal' }, kaarten.length + ' spellen')),
       el('div', { class: 'kaartrij' }, kaarten));
-    const v = V.vandaag(), g = V.gisteren(), gedaan = BB.opslag.lees('dagkaart', {});
+    const v = V.vandaag(), g = V.gisteren(), gedaan = BB.opslag.lees('dagkaart', {}), gespeeld = BB.opslag.lees('punten', {}).rondes > 0;
     const s = BB.scherm(doel,
       el('div', { class: 'held alleen-breed' },
         el('h1', null, 'Reken, puzzel en test je IQ.'),
         el('p', null, 'Achter elke kaart zit een kort spel of een test. ' + BB.zeg('Klik', 'Tik') + ' op een kaart om hem te openen. Alles is gratis en je hebt geen account nodig.'),
-        V.statusBlok(),
+        B.statusBlok(),
+        B.doelenBlok(),
         dagkaart(doel),
         V.stempelkaart()),
       // Op een telefoon is er geen ruimte voor de grote kop. Wie nog niet gespeeld heeft, krijgt een regel uitleg.
-      BB.opslag.lees('punten', {}).rondes > 0 ? null : el('p', { class: 'welkom alleen-smal' }, 'Tik op een kaart. Gratis, zonder account.'),
+      gespeeld ? null : el('p', { class: 'welkom alleen-smal' }, 'Tik op een kaart. Gratis, zonder account.'),
       el('div', { class: 'tafel' },
         stapel('IQ-test', 'De enige kaart die een IQ-uitslag geeft', [iqKaart()], 'alleen-breed'),
-        GROEPEN.map(gr => stapel(gr[0], gr[1], SPELLEN.filter(spel => spel.groep === gr[0]).map(kaartVan))),
+        GROEPEN.map(gr => stapel(gr[0], gr[1], inGroep(gr[0]).map(kaartVan))),
         // Alleen op een telefoon: de dagkaart en de IQ-test samen in de eerste rij. Deze groep staat hier als laatste,
         // zodat de kaarten op een computer precies zo blijven liggen als ze lagen. Het stijlblad zet hem bovenaan.
         stapel('Begin hier', '', [dagTegel(doel, v, 'Elke dag een spel, voor iedereen gelijk'), iqKaart(),
-          gedaan[g] ? null : dagTegel(doel, g, 'Die van gisteren ligt er nog')], 'eerst alleen-smal')));
+          gedaan[g] ? null : dagTegel(doel, g, 'Die van gisteren ligt er nog')], 'eerst alleen-smal',
+        // Wie al speelde, ziet naast de kop de doelen van vandaag.
+        gespeeld ? B.doelenStrook() : null),
+        // Een keer, voor wie al speelde: wat er nieuw is. Staat hier als laatste en komt met het stijlblad bovenaan.
+        B.nieuwBlok()));
     s.classList.add('start');
+  }
+  const SLOT = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.6" fill="currentColor"/><path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
+
+  // Een spel dat nog op slot zit: wat het is, op welk level het opengaat en hoe ver je bent.
+  function opSlot(doel, spel) {
+    document.body.classList.remove('bezig');
+    kleur(spel.id);
+    const level = B.levelVoor('spel', spel.id), totaal = BB.opslag.lees('punten', {}).totaal || 0, nodig = V.levelDrempel(level);
+    const groot = BB.kaart.groot(spel.id, spel.naam);
+    groot.classList.add('alleen-breed', 'dicht');
+    const s = BB.scherm(doel,
+      groot,
+      el('div', { class: 'spelbalk alleen-smal' }, el('span', { class: 'kaart-teken', html: BB.kaart.TEKEN[spel.id] }), el('strong', null, spel.naam)),
+      el('div', { class: 'begin-zij' },
+        el('span', { class: 'label slot' }, 'Op slot'),
+        el('p', { class: 'intro' }, tekstVan(spel, inst())),
+        el('div', { class: 'slotvak' },
+          el('strong', null, 'Dit spel gaat open op level ' + level + '.'),
+          el('div', { class: 'levelspoor' }, el('div', { class: 'levelvul', style: 'width:' + Math.round(totaal / nodig * 100) + '%' })),
+          el('span', { class: 'klein' }, 'Je bent level ' + B.levelNu() + '. Nog ' + punten(nodig - totaal) + '. Elke ronde van een ander spel levert punten op.')),
+        el('p', { class: 'klein' }, 'Ligt dit spel op de dagkaart, dan kun je het die dag wel spelen.'),
+        el('div', { class: 'knoppen' },
+          el('a', { class: 'knop groot', href: '#baan' }, 'Bekijk de baan'),
+          el('button', { class: 'knop stil alleen-breed', type: 'button', onclick: () => naarStart(doel) }, 'Terug naar de kaarten'))));
+    s.classList.add('begin', 'slot');
   }
 
   // Het scherm voor de start. Elk onderdeel zegt in woorden wat het doet.
@@ -311,6 +381,8 @@ BB.oefenhal = (function () {
     const uitleg = spel.uitleg ? spel.uitleg(i) : null;
     // De lengte van de ronde, als die te kiezen is. De keuze wordt per spel onthouden.
     const ronde = RONDE[spel.id], rondeNu = ronde ? rondeVan(spel.id, i) : null;
+    // De variant die bij dit spel hoort (als die er is) en of hij aan staat. vOpen: je level is hoog genoeg.
+    const vKeuze = dag ? null : variantBij(spel.id), variant = variantVan(spel.id, i), vOpen = vKeuze && B.variantOpen(vKeuze);
     // Een voorbeeldsom per gekozen soort, zodat je ziet wat je krijgt.
     const voorbeelden = niveau => i.ops.map(o => BB.sommen.maak(BB.maakRng('voorbeeld-' + niveau + o), niveau, [o]).tekst).join(', ');
     const rangRegel = !st ? 'Na ' + V.RUNS_VOOR_RANG + ' rondes krijg je een rang, van Zeven tot Aas.'
@@ -318,7 +390,7 @@ BB.oefenhal = (function () {
         (st.volgende == null ? '' : ' Voor ' + rangNaam(st.nu + 1) + ' moet je gemiddelde over je laatste ' + V.RUNS_IN_GEMIDDELDE + ' rondes ' + (spel.lager ? 'onder ' : 'boven ') + maat(spel, st.volgende) + ' komen.');
     const recordRegel = beste ? 'Het record op dit apparaat: ' + spel.toon(beste.score) + ' door ' + beste.naam + '.' : '';
     // De keuzes in een paar woorden, voor de telefoon. Daar staan de keuzes zelf in een paneel achter de knop Aanpassen.
-    const kort = [ronde ? ronde.bij(rondeNu) : null, spel.rekenen === true ? NIVEAUS[i.niveau].toLowerCase() : null, spel.rekenen ? i.ops.join(' ') : null,
+    const kort = [variant ? 'variant ' + VARIANT[variant].naam.toLowerCase() : null, ronde ? ronde.bij(rondeNu) : null, spel.rekenen === true ? NIVEAUS[i.niveau].toLowerCase() : null, spel.rekenen ? i.ops.join(' ') : null,
       spel.kiesRichting ? 'volgorde ' + richting(i).naam.toLowerCase() : null,
       spel.race ? (i.spook === 'uit' ? 'zonder tegenstander' : i.spook === 'record' ? 'tegen je record' : 'tegen je vorige ronde') : null,
       naamNu ? 'als ' + naamNu : 'zonder naam'].filter(Boolean).join(' · ');
@@ -329,6 +401,11 @@ BB.oefenhal = (function () {
       el('div', { class: 'instel-kop alleen-smal' }, el('h2', null, 'Aanpassen'), el('button', { class: 'knop', type: 'button', onclick: dicht }, 'Klaar')),
       !dag && ronde ? groep(ronde.vraag, ronde.keuzes.map(kz => keuze(kz[1], kz[0] === rondeNu, () => { i.ronde = Object.assign({}, i.ronde, { [spel.id]: kz[0] }); })),
         ronde.uitleg(rondeNu) + ' Elke keuze heeft zijn eigen records.') : null,
+      vKeuze ? groep('Welke variant?', [
+        keuze('Gewoon', !variant, () => { i.variant = Object.assign({}, i.variant); delete i.variant[spel.id]; }),
+        vOpen ? keuze(VARIANT[vKeuze].naam, variant === vKeuze, () => { i.variant = Object.assign({}, i.variant, { [spel.id]: vKeuze }); })
+          : el('button', { type: 'button', class: 'keuze dicht', disabled: '' }, VARIANT[vKeuze].naam + ' (level ' + B.levelVoor('variant', vKeuze) + ')')],
+      VARIANT[vKeuze].naam + ': ' + VARIANT[vKeuze].uitleg + (vOpen ? ' Een variant heeft zijn eigen records.' : ' Deze variant gaat open op level ' + B.levelVoor('variant', vKeuze) + '.')) : null,
       !dag && spel.rekenen === true ? groep('Hoe moeilijk?', NIVEAUS.map((n, nr) => keuze(n, nr === i.niveau, () => { i.niveau = nr; }))) : null,
       !dag && spel.rekenen ? groep('Welke sommen doen mee?', BEWERKINGEN.map(o => vink(o + ' ' + WOORD[o], i.ops.includes(o), () => {
         const nieuw = BEWERKINGEN.filter(b => b === o ? !i.ops.includes(b) : i.ops.includes(b));
@@ -358,6 +435,7 @@ BB.oefenhal = (function () {
       el('div', { class: 'begin-zij' },
         dag ? el('span', { class: 'label' }, 'Dagkaart van ' + V.kortDatum(dag)) : null,
         el('p', { class: 'intro' }, tekstVan(spel, i)),
+        variant ? el('p', { class: 'variant-regel' }, el('span', { class: 'label' }, 'Variant ' + VARIANT[variant].naam), ' ' + VARIANT[variant].uitleg) : null,
         dag ? el('p', { class: 'klein' }, 'Iedereen krijgt vandaag dezelfde opgaven. Je eerste poging telt.',
           el('span', { class: 'alleen-breed' }, (ronde || spel.rekenen ? ' Bij de dagkaart valt er niets te kiezen, zodat iedereen hetzelfde speelt.' : '') +
             (spel.kiesRichting ? ' Volgorde: ' + richting(i).naam.toLowerCase() + '.' : ''))) : null,
@@ -397,7 +475,7 @@ BB.oefenhal = (function () {
         const rnd = dag ? BB.maakRng('dag-' + dag + '-' + spel.id) : Math.random;
         const spookNaam = i.spook === 'record' ? 'record' : 'vorige run';
         // spookRegel: een regel om onder het spel te zetten, voor spellen zonder banen.
-        spel.speel(doel, i, { spook, runs, rnd, spookNaam, spookRegel: spook ? 'Je ' + spookNaam + ': ' + spel.toon(spook.score) : '' },
+        spel.speel(doel, i, { spook, runs, rnd, spookNaam, variant: variantVan(spel.id, i), spookRegel: spook ? 'Je ' + spookNaam + ': ' + spel.toon(spook.score) : '' },
           res => uitslag(doel, spel, i, k, runs, res, dag));
       }, 650);
     })();
@@ -432,11 +510,23 @@ BB.oefenhal = (function () {
   function rekenspel(doel, modus, i, ctx, klaar) {
     const spook = ctx.spook && ctx.spook.tijden ? ctx.spook : null, race = modus === 'sprint' || modus === 'tijdrace';
     const aantal = rondeVan('sprint', i), stappen = [], tijden = [];
-    let goed = 0, fout = 0, levens = LEVENS, af = false, huidig = null, klok = null, somStart = 0, trede = 1, top = 1, score = 0;
+    const blind = ctx.variant === 'blind', maxLevens = ctx.variant === 'eenleven' ? 1 : LEVENS;
+    let verberg = null;
+    BB.opruim.push(() => clearTimeout(verberg));
+    // Zet de som neer. Bij de variant Blind verdwijnt hij na een paar tellen en staat er een vraagteken.
+    function toonSom() {
+      opgave.textContent = huidig.tekst;
+      if (!blind) return;
+      clearTimeout(verberg);
+      verberg = setTimeout(() => { if (!af) opgave.textContent = '?'; }, BLIND_MS);
+    }
+    let goed = 0, fout = 0, levens = maxLevens, af = false, huidig = null, klok = null, somStart = 0, trede = 1, top = 1, score = 0;
     const balk = BB.maakBalk(), regel = kop(), opgave = el('div', { class: 'som somkaart' }), stand = el('p', { class: 'stand' }, race ? null : ctx.spookRegel || null);
     // De banen: jij in baan 1, je spookrun in baan 2. Zonder spookrun loop je alleen.
     const loper = klasse => el('i', { class: 'loper ' + klasse });
     const ik = loper('ik'), ander = spook && race ? loper('spook') : null;
+    // In jouw baan loopt je eigen poppetje.
+    ik.innerHTML = BB.poppetje.kop(B.uiterlijk());
     const baan = (wie, l) => el('div', { class: 'baan' }, el('span', null, wie), el('div', { class: 'baan-spoor' }, l));
     // Bergop: een trap van twintig treden. Zo zie je in een oogopslag hoe hoog je staat.
     const treden = modus === 'bergop' ? Array.from({ length: BERG.top }, (x, n) => el('i', { style: 'height:' + (20 + 80 * (n + 1) / BERG.top) + '%' })) : null;
@@ -479,13 +569,13 @@ BB.oefenhal = (function () {
     function nieuw() {
       const vorige = huidig;
       do { huidig = BB.sommen.maak(ctx.rnd, niveauNu(), i.ops); } while (vorige && huidig.tekst === vorige.tekst);
-      opgave.textContent = huidig.tekst;
+      toonSom();
       somStart = nu();
       if (modus === 'sprint') regel.tekst.textContent = 'Som ' + (goed + 1) + ' van ' + aantal;
       else if (modus === 'bergop') regel.tekst.textContent = 'Niveau ' + trede + ' van ' + BERG.top;
       else regel.tekst.textContent = goed + ' goed';
       if (modus === 'overleven') {
-        BB.leeg(regel.extra).append(hartjes(levens));
+        BB.leeg(regel.extra).append(hartjes(levens, maxLevens));
         if (klok) klok.stop();
         // Moeilijkere sommen krijgen meer tijd, maar op het hoogste niveau wordt de klok langzaam krapper.
         klok = BB.klok(balk, [6, 10, Math.max(10, 16 - (goed - 12) * 0.25)][niveauNu()], () => mis(null));
@@ -538,6 +628,8 @@ BB.oefenhal = (function () {
       if (modus === 'bergop') trede = bergStap(trede, false);
       if (modus === 'overleven' && --levens === 0) return einde();
       if (modus !== 'sprint') nieuw();
+      // Bij Sprint blijft dezelfde som staan. Wie blind speelt, krijgt hem dan nog een keer te zien.
+      else if (blind) toonSom();
     }
     function einde() {
       if (af) return;
@@ -604,7 +696,7 @@ BB.oefenhal = (function () {
   };
   const opsomming = lijst => lijst.length > 1 ? lijst.slice(0, -1).join(', ') + ' en ' + lijst[lijst.length - 1] : String(lijst[0]);
   function puzzelspel(doel, p, tienOpgaven, ctx, klaar) {
-    const tijden = [], gemist = [], fouten = [], reeks = tienOpgaven ? tienNiveaus(p.max) : null;
+    const tijden = [], gemist = [], fouten = [], reeks = tienOpgaven ? tienNiveaus(p.max) : null, tijd = puzzelTijd(p, ctx.variant === 'haast');
     let goed = 0, nr = 0, levens = LEVENS, top = 0, item = null, keuze = -1, k = null, klok = null, wacht = false;
     const balk = BB.maakBalk(), regel = kop(), veld = el('div', { class: 'puzzelveld' });
     const melding = el('p', { class: 'terugkoppeling' });
@@ -658,7 +750,7 @@ BB.oefenhal = (function () {
         BB.leeg(veld).append(t.el);
         if (knop) knop.disabled = true;
       }
-      klok = BB.klok(balk, p.tijd, () => antwoord(null));
+      klok = BB.klok(balk, tijd, () => antwoord(null));
     }
     function einde() {
       if (!tienOpgaven) return klaar({ score: goed, tijden, regels: ['Hoogste niveau: ' + (top + 1) + ' van ' + (p.max + 1)] });
@@ -714,6 +806,8 @@ BB.oefenhal = (function () {
       fout: (item, a) => 'Het woord ' + KLEUR[item.woord] + ' in de kleur ' + KLEUR[item.inkt] + ' (jij koos ' + KLEUR[a] + ')',
     },
   };
+  // De variant Omgekeerd van Kleurwoord: dezelfde opgaven, maar het goede antwoord is het woord.
+  TAAK.omgekeerd = Object.assign({}, TAAK.kleurwoord, { juist: item => item.woord });
   function tempospel(doel, taak, seconden, ctx, klaar) {
     const tijden = [], fouten = [], veel = taak.knoppen.length > 2;
     let goed = 0, fout = 0, af = false, huidig = null;
@@ -752,8 +846,8 @@ BB.oefenhal = (function () {
 
   // ---- getallen tikken: de klok loopt tot het laatste getal is gevonden ----
   function tikspel(doel, n, ctx, klaar) {
-    const getallen = BB.tikken.maakVeld(ctx.rnd, n), tijden = [], laatste = n * n;
-    let volgende = 1, mis = 0, af = false, vorige = 0, traagste = null;
+    const getallen = BB.tikken.maakVeld(ctx.rnd, n), tijden = [], laatste = n * n, stap = ctx.variant === 'achteruit' ? -1 : 1;
+    let volgende = stap > 0 ? 1 : laatste, mis = 0, af = false, vorige = 0, traagste = null;
     const balk = BB.maakBalk(), regel = kop(), stand = el('p', { class: 'stand' }, ctx.spookRegel || null);
     const bord = BB.tikken.veld(getallen, n, tik);
     balk.el.classList.add('alleen-tijd');
@@ -785,7 +879,8 @@ BB.oefenhal = (function () {
       knop.classList.remove('mis');
       knop.classList.add('gevonden');
       knop.disabled = true;
-      if (volgende++ < laatste) return toon();
+      volgende += stap;
+      if (volgende >= 1 && volgende <= laatste) return toon();
       af = true;
       clearInterval(ticker);
       klaar({
@@ -822,7 +917,7 @@ BB.oefenhal = (function () {
       alle[k] = { vorige: run, beste: record ? run : beste, laatste, rang: hoogste };
       BB.opslag.schrijf('runs', alle);
       ({ top, plek } = bewaar(spel, k, res.score));
-      beloning = V.naRonde({ medaille: m, record: record && !!beste, dag: !!dag });
+      beloning = B.naRonde({ spel: spel.id, groep: spel.groep, medaille: m, record: record && !!beste, dag: dag || null });
       if (dag) {
         const gedaan = BB.opslag.lees('dagkaart', {});
         if (!gedaan[dag]) { gedaan[dag] = { spel: spel.id, score: res.score, m }; BB.opslag.schrijf('dagkaart', gedaan); }
@@ -852,10 +947,13 @@ BB.oefenhal = (function () {
     // Een lange score, zoals "140 punten", krijgt een kleinere letter. Anders breekt hij over twee regels.
     const getal = el('div', { class: 'uitslag-getal' + (spel.toon(res.score).length > 7 ? ' lang' : '') }, spel.toon(res.score));
     const opnieuw = () => aftellen(doel, spel);
+    // Een spel van de dagkaart kan nog op slot zitten. Dan kun je het hierna niet nog een keer spelen.
+    const dicht = !B.spelOpen(spel.id), variant = variantVan(spel.id, i);
     const s = BB.scherm(doel,
       el('div', { class: 'uitslagkaart' + (record && beste ? ' record' : '') },
-        el('p', { class: 'uitslag-kop' }, (dag ? 'Dagkaart van ' + V.kortDatum(dag) + ', ' : '') + spel.naam + ', ' + spel.bij(i)),
+        el('p', { class: 'uitslag-kop' }, (dag ? 'Dagkaart van ' + V.kortDatum(dag) + ', ' : '') + spel.naam + ', ' + spel.bij(i) + (variant ? ', variant ' + VARIANT[variant].naam.toLowerCase() : '')),
         el('div', { class: 'labels' },
+          beloning && beloning.zonder.level > beloning.levelVoor ? el('span', { class: 'label level' }, 'Level ' + beloning.zonder.level + ' gehaald') : null,
           record && beste ? el('span', { class: 'label' }, 'Nieuw record') : null,
           nieuweRang ? el('span', { class: 'label rang' }, (runs.rang >= 0 ? 'Nieuwe rang: ' : 'Je eerste rang: ') + rangNaam(hoogste)) : null),
         getal,
@@ -866,13 +964,14 @@ BB.oefenhal = (function () {
         volgende,
         // Stoppen is net zo'n goede keuze als doorgaan. Daarom zijn de twee knoppen even groot.
         el('div', { class: 'knoppen hoofdknoppen' },
-          el('button', { class: 'knop groot', type: 'button', onclick: opnieuw }, 'Nog een keer'),
+          dicht ? null : el('button', { class: 'knop groot', type: 'button', onclick: opnieuw }, 'Nog een keer'),
           el('button', { class: 'knop groot stil', type: 'button', onclick: () => naarStart(doel) }, 'Klaar voor nu')),
+        dicht ? el('p', { class: 'klein' }, spel.naam + ' zit nog op slot. Buiten de dagkaart gaat het open op level ' + B.levelVoor('spel', spel.id) + '.') : null,
         el('div', { class: 'knoppen' },
-          el('button', { class: 'tekstknop', type: 'button', onclick: () => ga(doel, 'spel-' + spel.id) }, 'Instellingen'),
+          dicht ? null : el('button', { class: 'tekstknop', type: 'button', onclick: () => ga(doel, 'spel-' + spel.id) }, 'Instellingen'),
           dag && telt ? el('button', { class: 'tekstknop', type: 'button', onclick: e => deel(e.target, dag, spel, { score: res.score, m }) }, 'Deel je dagkaart') : null)),
       el('div', { class: 'uitslag-onder' },
-        beloning ? V.beloningBlok(beloning) : null,
+        beloning ? B.beloningBlok(beloning) : null,
         res.fouten && res.fouten.length ? el('details', { class: 'hoe' }, el('summary', null, 'Bekijk je fouten (' + res.fouten.length + ')'),
           el('ul', { class: 'lijst' }, res.fouten.slice(0, 12).map(f => el('li', null, f)))) : null,
         res.extra,
@@ -883,25 +982,26 @@ BB.oefenhal = (function () {
     s.classList.add('eind', 'wacht');
     BB.later(() => s.classList.remove('wacht'), 600);
     telOp(getal, res.score, spel.toon);
-    BB.opEnter(opnieuw);
+    if (!dicht) BB.opEnter(opnieuw);
   }
 
   // De recordpagina toont elke lijst die er is, met in woorden bij welke instellingen hij hoort.
   // De lengte van de ronde staat achteraan in de sleutel. Staat er niets, dan is het de kale keuze.
   // Geeft de plek van die keuze in het rijtje, of -1 als het spel geen keuze heeft.
   function rondeUit(spel, k) {
-    const ronde = RONDE[spel.id], deel = k.slice(spel.id.length + 1).split('|')[spel.rekenen ? 2 : 0];
+    const ronde = RONDE[spel.id], deel = zonderVariant(k).slice(spel.id.length + 1).split('|')[spel.rekenen ? 2 : 0];
     if (!ronde) return -1;
     const plek = ronde.keuzes.findIndex(kz => String(kz[0]) === deel);
     return plek >= 0 ? plek : ronde.keuzes.findIndex(kz => kz[0] === ronde.kaal);
   }
   function instellingTekst(spel, k) {
-    const rest = k.slice(spel.id.length + 1).split('|'), delen = [], ronde = RONDE[spel.id];
+    const rest = zonderVariant(k).slice(spel.id.length + 1).split('|'), delen = [], ronde = RONDE[spel.id];
     const soorten = ops => 'sommen met ' + ops.split('').map(o => WOORD[o]).join(', ');
     if (ronde) delen.push(ronde.bij(ronde.keuzes[rondeUit(spel, k)][0]));
     if (spel.rekenen === true) delen.push('niveau ' + NIVEAUS[+rest[0]].toLowerCase());
     if (spel.rekenen) delen.push(soorten(rest[1]));
     if (spel.kiesRichting) delen.push('volgorde: ' + BB.cijfers.SOORTEN.find(x => x.id === rest[0]).naam.toLowerCase());
+    if (variantUit(k)) delen.push('variant ' + VARIANT[variantUit(k)].naam.toLowerCase());
     const tekst = delen.join(', ');
     return tekst ? tekst[0].toUpperCase() + tekst.slice(1) : '';
   }
@@ -929,6 +1029,6 @@ BB.oefenhal = (function () {
   }
 
   // De regels en de teksten gaan mee naar buiten voor test/controle.js.
-  return { menu, open, ranglijst, SPELLEN, GROEPEN, RONDE, sleutel, instellingTekst, rondeUit, tekstVan,
-    regels: { versnelTijd, BERG, bergNiveau, bergStap, tienNiveaus, PUZZEL, TAAK, TIEN } };
+  return { menu, open, ranglijst, SPELLEN, GROEPEN, RONDE, VARIANT, variantBij, variantVan, sleutel, instellingTekst, rondeUit, tekstVan,
+    regels: { versnelTijd, BERG, bergNiveau, bergStap, tienNiveaus, puzzelTijd, PUZZEL, TAAK, TIEN, BLIND_MS } };
 })();

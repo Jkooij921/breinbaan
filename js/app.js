@@ -7,7 +7,12 @@
     oefenhal: start,
     ranglijst: () => BB.oefenhal.ranglijst(app),
     verzameling: () => BB.voortgang.verzameling(app),
+    baan: () => BB.baan.baan(app),
+    poppetje: () => BB.baan.poppetje(app),
+    vandaag: () => BB.baan.vandaag(app),
   };
+  // Pagina's die in het menu bij een andere pagina horen.
+  const BIJ = { iq: 'start', oefenhal: 'start', dev: 'start', poppetje: 'baan', vandaag: 'baan' };
 
   function toon() {
     const naam = location.hash.slice(1) || 'start';
@@ -17,10 +22,11 @@
     if (PAGINAS[naam]) PAGINAS[naam]();
     else if (!BB.oefenhal.open(app, naam)) start();
     // In het menu licht de pagina op waar je bent. Alles wat met spelen te maken heeft hoort bij Spelen.
-    const actief = PAGINAS[naam] && naam !== 'iq' && naam !== 'oefenhal' && naam !== 'dev' ? naam : 'start';
+    // Op een telefoon staat de verzameling niet in de balk. Daar hoort hij bij De baan.
+    const actief = PAGINAS[naam] ? BIJ[naam] || (naam === 'verzameling' && BB.smal() ? 'baan' : naam) : 'start';
     document.querySelectorAll('.menu a').forEach(a => a.classList.toggle('actief', a.getAttribute('href') === '#' + actief));
-    // Op een telefoon staan je level en je reeks kort in de kop.
-    document.getElementById('stand').textContent = BB.voortgang.kort();
+    // Op een telefoon staan je poppetje, je level en je reeks kort in de kop.
+    BB.baan.kopStand(document.getElementById('stand'));
   }
   window.addEventListener('hashchange', toon);
   // Een link naar de pagina waar je al bent verandert het adres niet. Dan tekenen we de pagina zelf opnieuw.
@@ -31,6 +37,8 @@
   document.querySelector('.stoppen').addEventListener('click', e => {
     if (!confirm('Stoppen? Wat je tot nu toe hebt gedaan gaat verloren.')) e.preventDefault();
   });
+  // Wie al speelde voordat de baan er was, houdt zijn spellen (zie baan.js).
+  BB.baan.start();
   toon();
 
   function start() { BB.oefenhal.menu(app); }
@@ -64,11 +72,11 @@
         pogingen.length ? el('button', { class: 'knop stil', type: 'button', onclick: exporteer }, 'Bewaar de ruwe scores') : null,
         pogingen.length ? el('button', { class: 'knop stil', type: 'button', onclick: wis }, 'Wis alles') : null),
       el('h2', { class: 'sectiekop' }, 'Een kopie van alles bewaren'),
-      el('p', { class: 'klein' }, 'Je records, rangen, stempels en IQ-uitslagen staan alleen in deze browser. Wis je de browsergegevens, dan zijn ze weg. Op een iPhone kan dat al gebeuren na een week zonder bezoek. Met een kopie zet je alles terug, ook op een ander apparaat.'),
+      el('p', { class: 'klein' }, 'Je records, rangen, stempels, je poppetje en je IQ-uitslagen staan alleen in deze browser. Wis je de browsergegevens, dan zijn ze weg. Op een iPhone kan dat al gebeuren na een week zonder bezoek. Met een kopie zet je alles terug, ook op een ander apparaat.'),
       el('div', { class: 'knoppen' },
         el('button', { class: 'knop', type: 'button', onclick: BB.voortgang.bewaarBestand }, 'Bewaar een kopie'),
         el('label', { class: 'knop stil' }, 'Zet een kopie terug', el('input', { type: 'file', accept: '.json,application/json', hidden: '', onchange: e => {
-          if (e.target.files[0]) BB.voortgang.zetTerug(e.target.files[0], gelukt => { alert(gelukt ? 'Je voortgang is teruggezet.' : 'Dit bestand hoort niet bij Breinbaan.'); if (gelukt) uitslagen(); });
+          if (e.target.files[0]) BB.voortgang.zetTerug(e.target.files[0], gelukt => { alert(gelukt ? 'Je voortgang is teruggezet.' : 'Dit bestand hoort niet bij Breinbaan.'); if (gelukt) { BB.baan.start(); uitslagen(); } });
         } }))));
     s.classList.add('breed');
   }
@@ -90,11 +98,22 @@
       el('h2', null, 'De spellen'),
       vraag('Welke groepen spellen zijn er en wat oefen je ermee?',
         'Er zijn vier groepen. Bij Rekenen oefen je hoofdrekenen op tempo, bij Geheugen oefen je iets onthouden terwijl je met iets anders bezig bent, bij Puzzels oefen je regels ontdekken en vormen in je hoofd draaien, en bij Tempo oefen je snel en precies kijken. Je wordt beter in het spel dat je oefent, maar je IQ stijgt er niet van.'),
+      vraag('Waarom zitten sommige spellen op slot?',
+        'Je begint met ' + (BB.oefenhal.SPELLEN.length - BB.baan.OP_SLOT.length) + ' spellen. De andere ' + BB.baan.OP_SLOT.length + ' gaan open als je level stijgt. Het eerste komt al na een paar rondes. Op de pagina De baan zie je welk spel bij welk level hoort.',
+        'Ligt een spel dat op slot zit op de dagkaart, dan kun je het die dag wel spelen. Speelde je een spel al voordat er sloten waren, dan blijft het open.'),
       vraag('Wat betekenen brons, zilver en goud?', 'Dat zijn doelen per ronde. Voor de start zie je wat je ervoor moet halen. Brons is ruim, goud is moeilijk.'),
       vraag('Wat is mijn rang?', 'Een rang zegt hoe je er de laatste tijd voor staat. Hij loopt van Zeven via Tien, Boer, Vrouw en Heer naar Aas, en volgt het gemiddelde van je laatste ' + BB.voortgang.RUNS_IN_GEMIDDELDE + ' rondes. Je krijgt hem na ' + BB.voortgang.RUNS_VOOR_RANG + ' rondes. De hoogste rang die je ooit haalde blijft staan.'),
       vraag('Wat is mijn reeks?', 'Het aantal dagen dat je achter elkaar hebt gespeeld. Een ronde per dag is genoeg. Mis je een dag, dan begint de reeks opnieuw, tenzij je een reservedag hebt.',
         'Een reservedag vangt een gemiste dag op. Je verdient er een op elke vijfde dag van een reeks en je kunt er ' + BB.voortgang.MAX_RESERVE + ' bewaren.'),
-      vraag('Hoe werken punten en levels?', 'Elke ronde levert 10 punten op. Daar komt iets bij voor een medaille, een nieuw record, de dagkaart en je eerste ronde van de dag. Met genoeg punten ga je een level omhoog. Elk level kost iets meer dan het vorige.'),
+      vraag('Hoe werken punten en levels?', 'Elke ronde levert 10 punten op. Daar komt iets bij voor een medaille, een nieuw record, de dagkaart en je eerste ronde van de dag. Met genoeg punten ga je een level omhoog. Elk level kost iets meer dan het vorige. Bij elk level krijg je iets.'),
+      vraag('Wat is de baan?', 'De baan is de weg langs alle levels. Bij elk level ligt een halte waar je iets krijgt: een nieuw spel, een variant van een spel of een onderdeel voor je poppetje. Je ziet altijd wat de volgende halte is en hoeveel punten je nog nodig hebt.'),
+      vraag('Wat is mijn poppetje?', 'Een figuur die bij jou hoort. Het getal op de buik is je level. Je kiest zelf de kleur, wat het op het hoofd heeft, het gezicht en wat het in de hand houdt. Nieuwe onderdelen krijg je bij levels en vaardigheden.',
+        'Je poppetje staat alleen op dit apparaat. Anderen zien het niet.'),
+      vraag('Wat zijn vaardigheden?', 'Elke groep spellen heeft een eigen balk: Rekenen, Geheugen, Puzzels en Tempo. Een ronde in die groep levert 2 punten op, een medaille of een record levert meer op. Op niveau ' + BB.baan.MIJLPALEN[0] + ' krijgt je poppetje een voorwerp van die groep, op niveau ' + BB.baan.MIJLPALEN[1] + ' de gouden versie.',
+        'De balk laat zien hoeveel je in die spellen hebt bereikt. Het is geen meting van je brein en hij kan niet zakken.'),
+      vraag('Wat is een variant?', 'Een andere manier om hetzelfde spel te spelen. Bij de variant Blind verdwijnt de som bijvoorbeeld na ' + (BB.oefenhal.regels.BLIND_MS / 1000) + ' seconden. Je kiest een variant op het scherm voor de start, onder de vraag Welke variant. Een variant heeft zijn eigen records.'),
+      vraag('Wat zijn de doelen van vandaag?', 'Elke dag liggen er drie kleine doelen, zoals de dagkaart spelen of een medaille halen. Elk doel levert ' + BB.baan.DOELPUNTEN + ' punten op en alle drie samen nog ' + BB.baan.ALLES_PUNTEN + ' extra.',
+        'Ze zijn vrijwillig. Sla je ze over, dan verlies je niets. Om middernacht komen er drie nieuwe.'),
       vraag('Wat is een verrassing?', 'Na een ronde krijg je soms een omgekeerde kaart. Draai hem om en je krijgt bonuspunten of een bijzondere kaart voor je verzameling. Wanneer hij komt en wat erin zit, is toeval. Er zijn ' + BB.voortgang.KAARTEN.length + ' bijzondere kaarten.'),
       vraag('Wat is de dagkaart?', 'Elke dag ligt er een kaart omgekeerd. Draai hem om en je krijgt het spel van die dag, met voor iedereen dezelfde opgaven. Je eerste poging telt. De kaart van gisteren blijft een dag liggen.'),
       vraag('Wat zijn speeldagen?', (BB.smal() ? 'Op de pagina Verzameling' : 'Op de startpagina') + ' staat een kalender. Elke dag waarop je speelt krijgt een stempel. Die teller loopt alleen op, ook als je reeks breekt. Bij 7, 14, 30, 60 en 100 speeldagen krijg je een ster.'),

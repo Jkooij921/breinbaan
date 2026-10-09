@@ -3,7 +3,7 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 const map = path.join(__dirname, '..', 'js');
 for (const f of ['basis.js', 'normen.js', 'taken/patronen.js', 'taken/cijferreeksen.js', 'taken/onthouden.js',
   'taken/sommen.js', 'taken/symbolen.js', 'taken/rekenspan.js', 'taken/kubussen.js', 'taken/controleren.js',
-  'taken/spiegelbeeld.js', 'taken/tikken.js', 'taken/kleurwoord.js', 'kaarten.js', 'voortgang.js', 'iqtest.js', 'oefenhal.js']) {
+  'taken/spiegelbeeld.js', 'taken/tikken.js', 'taken/kleurwoord.js', 'kaarten.js', 'voortgang.js', 'poppetje.js', 'baan.js', 'iqtest.js', 'oefenhal.js']) {
   vm.runInThisContext(fs.readFileSync(path.join(map, f), 'utf8'), { filename: f });
 }
 
@@ -334,6 +334,97 @@ for (const id of ['patronen', 'reeksen', 'kubussen', 'spiegelbeeld']) {
     O.rondeUit(spelVan('patronen'), 'patronen|tien') < O.rondeUit(spelVan('patronen'), 'patronen|') && O.rondeUit(spelVan('rekenspan'), 'rekenspan||') === -1, 'de recordpagina zet de lijsten in de volgorde van de keuzes');
   const dag = V.dagSpel('2026-10-07', O.SPELLEN.length);
   eis(heel(dag) && dag >= 0 && dag < O.SPELLEN.length, 'de dagkaart kiest uit alle 14 spellen');
+}
+
+// ---- de baan: haltes, sloten, varianten, je poppetje, vaardigheden en de doelen van de dag ----
+{
+  const B = BB.baan, P = BB.poppetje, V = BB.voortgang, verboden = /[;·–—]| - /;
+  const levels = Object.keys(B.BAAN).map(Number), alle = levels.reduce((lijst, l) => lijst.concat(B.BAAN[l]), []);
+  eis(levels.join() === Array.from({ length: B.TOP - 1 }, (x, n) => n + 2).join(), 'de baan heeft een halte bij elk level van 2 tot en met ' + B.TOP);
+  eis(levels.every(l => B.BAAN[l].length >= 1 && B.BAAN[l].length <= 2), 'elke halte geeft een of twee dingen');
+  eis(new Set(alle.map(b => b.join(':'))).size === alle.length, 'niets staat twee keer op de baan');
+  for (const b of alle) eis(typeof B.wat(b, true) === 'string' && !verboden.test(B.wat(b, true)) && !verboden.test(B.wat(b)) && !/undefined/.test(B.wat(b, true) + B.wat(b)), 'wat je krijgt staat er in woorden: ' + b.join(' '));
+  eis(B.halteTekst(V.levelStand(0)) === 'Volgende halte, level 2: het spel Spiegelbeeld en een pet voor je poppetje. Nog 50 punten.', 'de volgende halte in een zin (' + B.halteTekst(V.levelStand(0)) + ')');
+  eis(B.halteTekst(V.levelStand(V.levelDrempel(B.TOP))) === 'Je hebt alle haltes van de baan gehad.', 'na de laatste halte staat er dat je ze gehad hebt');
+
+  // Spellen op slot: acht zijn er open vanaf het begin, en in elke groep minstens een.
+  eis(B.OP_SLOT.length === 6 && B.OP_SLOT.every(id => spelVan(id)) && O.SPELLEN.length - B.OP_SLOT.length === 8, 'acht spellen zijn open en zes bestaande spellen zitten op slot');
+  eis(O.GROEPEN.every(g => O.SPELLEN.some(s => s.groep === g[0] && !B.OP_SLOT.includes(s.id))), 'elke groep heeft vanaf het begin een open spel');
+  eis(B.levelVoor('spel', 'sprint') === 0 && B.levelVoor('spel', 'spiegelbeeld') === 2 && B.levelVoor('spel', 'bergop') === 9, 'het level waarop een spel opengaat');
+
+  // Varianten: elke variant hoort bij bestaande spellen, staat op de baan en heeft een eigen ranglijst.
+  const varianten = Object.keys(O.VARIANT), metVariant = varianten.reduce((lijst, v) => lijst.concat(O.VARIANT[v].spellen), []);
+  eis(alle.filter(b => b[0] === 'variant').map(b => b[1]).sort().join() === varianten.slice().sort().join(), 'elke variant staat op de baan en andersom');
+  eis(new Set(metVariant).size === metVariant.length, 'een spel heeft hooguit een variant');
+  for (const v of varianten) {
+    eis(!verboden.test(O.VARIANT[v].naam + ' ' + O.VARIANT[v].uitleg), v + ': naam en uitleg zonder streepjes of puntkomma');
+    eis(O.VARIANT[v].spellen.some(id => B.levelVoor('spel', id) <= B.levelVoor('variant', v)), v + ': komt pas als een van zijn spellen open is');
+    for (const id of O.VARIANT[v].spellen) {
+      const spel = spelVan(id), gewoon = standaard(), i = Object.assign(standaard(), { variant: { [id]: v } }), k = O.sleutel(spel, i), m = spel.medailles(i);
+      eis(spel && O.variantBij(id) === v && O.variantVan(id, i) === v, id + ': de variant ' + v + ' hoort bij dit spel');
+      eis(k === O.sleutel(spel, gewoon) + '~' + v, id + ' ' + v + ': de variant staat achteraan in de sleutel (' + k + ')');
+      eis(m.length === 3 && (spel.lager ? m[0] > m[1] && m[1] > m[2] && m[2] > 0 : m[0] > 0 && m[0] < m[1] && m[1] < m[2]), id + ' ' + v + ': brons, zilver en goud lopen op (' + m + ')');
+      eis(O.instellingTekst(spel, k).endsWith('variant ' + O.VARIANT[v].naam.toLowerCase()) && O.rondeUit(spel, k) === O.rondeUit(spel, O.sleutel(spel, gewoon)), id + ' ' + v + ': de recordpagina noemt de variant (' + O.instellingTekst(spel, k) + ')');
+      eis(!verboden.test(O.tekstVan(spel, i)) && (!spel.uitleg || spel.uitleg(i).every(zin => typeof zin === 'string' && !verboden.test(zin))), id + ' ' + v + ': tekst en uitleg zonder streepjes of puntkomma');
+    }
+  }
+  eis(O.variantVan('sprint', { variant: { sprint: 'achteruit' } }) === null && O.variantVan('sprint', {}) === null && O.variantVan('rekenspan', { variant: { rekenspan: 'blind' } }) === null, 'een variant die niet bij het spel hoort telt niet');
+  eis(REGELS.puzzelTijd(REGELS.PUZZEL.patronen, true) === 22 && REGELS.puzzelTijd(REGELS.PUZZEL.patronen, false) === 45 && REGELS.puzzelTijd(REGELS.PUZZEL.spiegelbeeld, true) === 10, 'haast: de helft van de tijd per opgave');
+  eis(REGELS.TAAK.omgekeerd.juist({ woord: 2, inkt: 0 }) === 2 && REGELS.TAAK.kleurwoord.juist({ woord: 2, inkt: 0 }) === 0, 'omgekeerd: het goede antwoord is het woord, anders de kleur');
+  eis(/woord dat er staat, niet de kleur/.test(O.tekstVan(spelVan('kleurwoord'), { ronde: {}, variant: { kleurwoord: 'omgekeerd' } })) && /^Eén leven\./.test(O.tekstVan(spelVan('overleven'), { ronde: {}, variant: { overleven: 'eenleven' } })) &&
+    /terug naar 1/.test(O.tekstVan(spelVan('tikken'), { ronde: {}, variant: { tikken: 'achteruit' } })), 'bij een variant zegt de tekst wat er anders is');
+
+  // Je poppetje: elk onderdeel tekent, heeft een naam en is te krijgen.
+  for (const b of alle.filter(x => x[0] !== 'spel' && x[0] !== 'variant')) eis(P.naamVan(b[0], b[1]) && P.metVan(b[0], b[1]), 'de baan geeft een onderdeel dat bestaat: ' + b.join(' '));
+  for (const slot of P.SLOTS) {
+    eis(slot.keuzes.some(k => k.id === P.STANDAARD[slot.id]) && B.nodig(slot.id, P.STANDAARD[slot.id]) === null, slot.id + ': de standaard heb je vanaf het begin');
+    for (const k of slot.keuzes) {
+      const n = B.nodig(slot.id, k.id), waar = slot.id + ' ' + k.id;
+      eis(k.naam && !verboden.test(k.naam) && (k.id === P.STANDAARD[slot.id] || slot.id === 'kleur' || k.met), waar + ': heeft een naam, ook voor in een zin');
+      eis(P.svg({ [slot.id]: k.id }, 7).includes('<svg') && P.kop({ [slot.id]: k.id }).includes('<svg') && !/undefined|NaN/.test(P.svg({ [slot.id]: k.id }, 7)), waar + ': tekent');
+      if (slot.id === 'voorwerp' && k.id !== 'geen') eis(n && B.GROEPEN.includes(n.groep) && B.MIJLPALEN.includes(n.niveau) && P.ding(k.id).includes('<svg'), waar + ': hoort bij een vaardigheid');
+      else eis(n === null || (n.level >= 2 && n.level <= B.TOP), waar + ': heb je vanaf het begin of krijg je op de baan');
+    }
+  }
+  eis(P.SLOTS.filter(s => s.id !== 'voorwerp').every(s => s.keuzes.filter(k => !B.nodig(s.id, k.id)).length >= 2), 'bij kleur, hoofd en gezicht valt er vanaf het begin iets te kiezen');
+  eis(JSON.stringify(P.heel({ kleur: 'bestaatniet', hoofd: 'pet' })) === JSON.stringify(Object.assign({}, P.STANDAARD, { hoofd: 'pet' })) && JSON.stringify(P.heel(null)) === JSON.stringify(P.STANDAARD), 'een onderdeel dat niet bestaat valt terug op de standaard');
+  eis(P.svg(P.STANDAARD, 12).includes('>12</text>') && !P.kop(P.STANDAARD).includes('<text'), 'het level staat op de buik, en niet op het losse hoofd');
+
+  // Vaardigheden: een balk per groep, met een voorwerp op niveau 3 en een gouden op niveau 6.
+  eis(B.vNiveau(0) === 1 && B.vNiveau(19) === 1 && B.vNiveau(20) === 2 && B.vNiveau(60) === 3 && B.vNiveau(300) === 6 && B.vNiveau(900) === 10 && B.vNiveau(99999) === B.V_MAX, 'niveaus van een vaardigheid bij 0, 20, 60, 300 en 900 punten');
+  for (let n = 1; n < B.V_MAX; n++) eis(B.vNiveau(B.vDrempel(n + 1) - 1) === n && B.vNiveau(B.vDrempel(n + 1)) === n + 1, 'niveau ' + (n + 1) + ' begint precies op zijn drempel');
+  const vs = B.vStand(75);
+  eis(vs.niveau === 3 && vs.binnen === 15 && vs.nodig === 60 && B.vStand(5000).vol === true, 'voortgang binnen een niveau, en het hoogste niveau is vol');
+  eis(B.vPunten({ medaille: 0 }) === 2 && B.vPunten({ medaille: 1 }) === 7 && B.vPunten({ medaille: 3, record: true }) === 32, 'een ronde geeft 2 punten voor de vaardigheid, meer met een medaille of record');
+  eis(B.voorwerpen('Rekenen', 2).length === 0 && B.voorwerpen('Rekenen', 3).join() === 'telraam' && B.voorwerpen('Tempo', 6).join() === 'bliksem,bliksem-goud', 'een voorwerp op niveau 3 en de gouden versie op niveau 6');
+  eis(B.GROEPEN.join() === O.GROEPEN.map(g => g[0]).join() && B.GROEPEN.every(g => P.naamVan('voorwerp', B.VOORWERP[g]) && P.naamVan('voorwerp', B.VOORWERP[g] + '-goud')), 'elke groep spellen heeft een vaardigheid met een voorwerp');
+
+  // Doelen van de dag: drie per dag, vast uit de datum, en elk doel levert een keer punten op.
+  const groepen = new Set(), derde = new Set();
+  for (let n = 0; n < 60; n++) {
+    const datum = '2026-' + (n < 30 ? '11-' : '12-') + String(n % 30 + 1).padStart(2, '0'), d = B.doelenVan(datum), d2 = B.doelenVan(datum);
+    eis(d.length === 3 && d.map(x => x.id).join() === d2.map(x => x.id).join() && d[1].groep === d2[1].groep, 'drie doelen die vast uit de datum volgen (' + datum + ')');
+    eis(d[0].id === 'dagkaart' && B.GROEPEN.includes(d[1].groep) && B.DERDE.includes(d[2]) && d.every(x => x.nodig >= 1 && !verboden.test(x.tekst)), 'de dagkaart, een groep en een wisselend doel (' + datum + ')');
+    groepen.add(d[1].groep);
+    derde.add(d[2].id);
+  }
+  eis(groepen.size === 4 && derde.size === B.DERDE.length, 'in twee maanden komt elke groep en elk wisselend doel voorbij');
+  const dag = '2026-10-09', doelGroep = B.doelenVan(dag)[1].groep;
+  let st = null, delen = [], net = 0;
+  for (let n = 0; n < 5; n++) {
+    const r = B.dagTel(st, dag, { spel: 'spel' + n, groep: doelGroep, medaille: 1, dag: n === 0 ? dag : null });
+    st = r.dag;
+    delen = delen.concat(r.delen);
+    net += r.net ? 1 : 0;
+  }
+  eis(st.rondes === 5 && st.alles && st.beloond.length === 3 && net === 1, 'na vijf rondes met een medaille en de dagkaart zijn alle drie de doelen gehaald');
+  eis(delen.length === 4 && delen.reduce((som, d) => som + d[1], 0) === 3 * B.DOELPUNTEN + B.ALLES_PUNTEN && delen.every(d => !verboden.test(d[0])), 'drie doelen en een keer de bonus (' + delen.map(d => d[0] + ' ' + d[1]).join(', ') + ')');
+  const nogEens = B.dagTel(st, dag, { spel: 'spel0', groep: doelGroep, medaille: 3, dag });
+  eis(nogEens.delen.length === 0 && !nogEens.net && nogEens.dag.rondes === 6, 'een gehaald doel levert maar een keer punten op');
+  const morgen = B.dagTel(st, '2026-10-10', { spel: 'sprint', groep: 'Rekenen', medaille: 0 });
+  eis(morgen.dag.datum === '2026-10-10' && morgen.dag.rondes === 1 && !morgen.dag.alles && st.rondes === 5, 'de volgende dag begint opnieuw, en de oude stand blijft heel');
+  eis(B.dagTel(null, dag, { spel: 'sprint', groep: 'Rekenen', medaille: 0, dag: '2026-10-08' }).dag.dagkaart === false, 'de dagkaart van gisteren telt niet voor het doel van vandaag');
+  eis(['vrij', 'vaardigheid', 'uiterlijk', 'dagdoelen', 'gezien'].every(k => V.SLEUTELS.includes(k)), 'de reservekopie bewaart ook de baan, je poppetje en je vaardigheden');
 }
 
 // De dagkaart: dezelfde seed geeft bij elk nieuw spel dezelfde opgaven.

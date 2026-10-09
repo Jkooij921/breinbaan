@@ -140,7 +140,7 @@ BB.voortgang = (function () {
   }
 
   // ---- na elke ronde: stempel, reeks, punten en soms een verrassing ----
-  // info: { medaille: 0 tot 3, record: nieuw record, dag: dagkaart }
+  // info: { medaille: 0 tot 3, record: nieuw record, dag: dagkaart, extra: nog meer regels met punten }
   function naRonde(info) {
     const eersteVandaag = stempel();
     const r = reeksNa(BB.opslag.lees('reeks', {}), vandaag());
@@ -150,6 +150,8 @@ BB.voortgang = (function () {
     if (info.record) delen.push(['Nieuw record', 10]);
     if (info.dag) delen.push(['Dagkaart', 15]);
     if (eersteVandaag) delen.push(['Eerste ronde vandaag', 10]);
+    // extra: wat er van buiten bij komt, zoals een gehaald doel van de dag (zie baan.js).
+    for (const d of info.extra || []) delen.push(d);
     const p = Object.assign({ totaal: 0, rondes: 0, verrast: false }, BB.opslag.lees('punten', {}));
     const voor = p.totaal, erbij = delen.reduce((som, d) => som + d[1], 0);
     // De eerste verrassing komt bij je derde ronde, zodat iedereen er een meemaakt. Daarna is het toeval.
@@ -164,48 +166,16 @@ BB.voortgang = (function () {
     return { delen, erbij, verrassing, levelVoor: levelVan(voor), zonder: levelStand(voor + erbij), met: levelStand(p.totaal), reeks: r.reeks, reeksUit: r.uit };
   }
 
-  // Het blok op de uitslagkaart: wat deze ronde opleverde.
-  function beloningBlok(b) {
-    const balk = el('div', null, levelBalk(b.zonder));
-    const u = b.reeksUit, reeksRegel = 'Reeks: ' + dagen(b.reeks.lengte) + ' op rij' +
-      (u.verdiend ? '. Je hebt een reservedag verdiend' : '') + (u.ingezet ? '. Een reservedag ving je gemiste dag op' : '') +
-      (u.gebroken > 1 ? '. Je vorige reeks van ' + dagen(u.gebroken) + ' was voorbij' : '') + '.';
-    let verras = null;
-    if (b.verrassing) {
-      const v = b.verrassing;
-      verras = el('button', { class: 'verrassing', type: 'button' }, el('strong', null, 'Verrassing'), el('span', null, 'Draai om'));
-      verras.addEventListener('click', () => {
-        if (verras.classList.contains('open')) return;
-        verras.classList.add('open');
-        BB.leeg(verras).append(
-          v.soort === 'punten' ? el('strong', null, '+' + v.punten + ' punten') : spaarkaart(v.kaart, true),
-          el('span', null, v.soort === 'punten' ? 'Bonuspunten' : v.dubbel ? 'Deze had je al: +' + v.punten + ' punten' : 'Nieuw in je verzameling'));
-        BB.leeg(balk).append(levelBalk(b.met));
-      });
-    }
-    return el('div', { class: 'beloning' },
-      el('div', { class: 'beloning-punten' },
-        el('strong', { class: 'erbij' }, '+' + b.erbij + ' punten'),
-        b.zonder.level > b.levelVoor ? el('span', { class: 'label rang' }, 'Level ' + b.zonder.level + ' gehaald') : null,
-        el('ul', null, b.delen.map(d => el('li', null, d[0] + ' ', el('b', null, '+' + d[1])))),
-        balk,
-        el('p', { class: 'klein' }, reeksRegel)),
-      verras);
+  // Het blok met je reeks: hoeveel dagen op rij, wat je vandaag moet doen en je reservedagen.
+  function reeksBlok() {
+    const r = reeksNu();
+    return el('div', { class: 'reeksregel' + (r.status === 'open' && r.lengte ? ' open' : '') },
+      el('strong', null, r.lengte ? 'Reeks: ' + dagen(r.lengte) + ' op rij' : 'Reeks'),
+      el('span', null, reeksTekst(r)),
+      el('span', { class: 'klein' }, 'Reservedagen: ' + r.reserve + ' van ' + MAX_RESERVE + (r.beste > r.lengte ? '. Langste reeks: ' + dagen(r.beste) : '') + '.'));
   }
 
-  // Het blok op de startpagina: level, reeks en verzameling in een oogopslag.
-  function statusBlok() {
-    const p = BB.opslag.lees('punten', { totaal: 0 }), r = reeksNu(), heb = BB.opslag.lees('verzameling', []);
-    return el('div', { class: 'status' },
-      levelBalk(levelStand(p.totaal || 0)),
-      el('div', { class: 'reeksregel' + (r.status === 'open' && r.lengte ? ' open' : '') },
-        el('strong', null, r.lengte ? 'Reeks: ' + dagen(r.lengte) + ' op rij' : 'Reeks'),
-        el('span', null, reeksTekst(r)),
-        el('span', { class: 'klein' }, 'Reservedagen: ' + r.reserve + ' van ' + MAX_RESERVE + (r.beste > r.lengte ? '. Langste reeks: ' + dagen(r.beste) : '') + '.')),
-      el('a', { class: 'tekstknop', href: '#verzameling' }, 'Verzameling: ' + heb.length + ' van ' + KAARTEN.length + ' bijzondere kaarten'));
-  }
-
-  // De kop op een telefoon: level en reeks in een paar woorden. Wie erop tikt, komt bij de verzameling.
+  // De kop op een telefoon: level en reeks in een paar woorden. Wie erop tikt, komt bij de baan.
   function kort() {
     return 'Level ' + levelVan(BB.opslag.lees('punten', {}).totaal || 0) + ' · ' + dagen(reeksNu().lengte) + ' op rij';
   }
@@ -214,12 +184,12 @@ BB.voortgang = (function () {
     const heb = BB.opslag.lees('verzameling', []);
     const s = BB.scherm(doel,
       el('h1', null, 'Verzameling'),
-      // Op een telefoon staan level, reeks en speeldagen hier in plaats van op de startpagina.
-      el('div', { class: 'voortgang-smal alleen-smal' }, statusBlok(), stempelkaart(), el('h2', null, 'Bijzondere kaarten')),
+      // Op een telefoon staat de kalender met je speeldagen hier, in plaats van op de startpagina.
+      el('div', { class: 'voortgang-smal alleen-smal' }, stempelkaart(), el('h2', null, 'Bijzondere kaarten')),
       el('p', { class: 'intro' }, 'Je hebt ' + heb.length + ' van de ' + KAARTEN.length + ' bijzondere kaarten.'),
       el('p', { class: 'klein' }, 'Na een ronde krijg je soms een verrassing: bonuspunten of een bijzondere kaart. Welke kaart je krijgt is toeval. Een kaart die je al had levert ' + DUBBEL + ' punten op.'),
       el('div', { class: 'spaarkaarten' }, KAARTEN.map(k => spaarkaart(k, heb.includes(k.id)))),
-      el('a', { class: 'knop alleen-breed', href: '#start' }, 'Naar de kaarten'));
+      el('div', { class: 'knoppen links' }, el('a', { class: 'knop stil', href: '#baan' }, 'Naar de baan'), el('a', { class: 'knop alleen-breed', href: '#start' }, 'Naar de kaarten')));
     s.classList.add('breed');
   }
 
@@ -227,7 +197,8 @@ BB.voortgang = (function () {
   const dagSpel = (datum, aantal) => Math.floor(BB.maakRng('dagkaart-' + datum)() * aantal);
 
   // ---- reservekopie: de browser kan zijn opslag wissen, dus je kunt alles in een bestand bewaren ----
-  const SLEUTELS = ['speler', 'oefen', 'records', 'runs', 'iqpogingen', 'speeldagen', 'dagkaart', 'reeks', 'punten', 'verzameling'];
+  const SLEUTELS = ['speler', 'oefen', 'records', 'runs', 'iqpogingen', 'speeldagen', 'dagkaart', 'reeks', 'punten', 'verzameling',
+    'vrij', 'vaardigheid', 'uiterlijk', 'dagdoelen', 'gezien'];
   function bewaarBestand() {
     const data = { site: 'breinbaan', datum: new Date().toISOString() };
     for (const k of SLEUTELS) data[k] = BB.opslag.lees(k, null);
@@ -242,6 +213,8 @@ BB.voortgang = (function () {
         const data = JSON.parse(lezer.result);
         if (data.site !== 'breinbaan') throw new Error('ander bestand');
         for (const k of SLEUTELS) if (data[k] != null) BB.opslag.schrijf(k, data[k]);
+        // Een kopie van voor de baan weet niet welke spellen open waren. Dan wordt dat opnieuw uitgezocht (zie baan.js).
+        if (data.vrij == null) BB.opslag.schrijf('vrij', null);
         klaar(true);
       } catch (e) {
         klaar(false);
@@ -252,8 +225,8 @@ BB.voortgang = (function () {
   }
 
   return {
-    vandaag, gisteren, kortDatum, RANGEN, RUNS_VOOR_RANG, RUNS_IN_GEMIDDELDE, MAX_RESERVE, RESERVE_ELKE, KAARTEN,
-    drempels, rangVan, stand, stempel, stempelkaart, reeksNa, reeksNu, levelVan, levelStand, naRonde, beloningBlok, statusBlok, kort, verzameling,
-    dagSpel, bewaarBestand, zetTerug,
+    vandaag, gisteren, kortDatum, dagen, RANGEN, RUNS_VOOR_RANG, RUNS_IN_GEMIDDELDE, MAX_RESERVE, RESERVE_ELKE, KAARTEN, SLEUTELS,
+    drempels, rangVan, stand, stempel, stempelkaart, reeksNa, reeksNu, reeksBlok, levelVan, levelStand, levelDrempel: drempel, levelBalk, spaarkaart,
+    naRonde, kort, verzameling, dagSpel, bewaarBestand, zetTerug,
   };
 })();

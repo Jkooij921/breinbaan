@@ -861,3 +861,26 @@ body[data-spel="kleurwoord"] .balk-vul { background: var(--kleur-d); }
 @media (max-width: 520px) and (max-height: 640px) {
   .loper.ik { width: 1.2rem; height: 1.2rem; }
 }
+
+/* ---- de ranglijst van iedereen ---- */
+h4 { margin: 0; font-size: 1rem; font-weight: 700; line-height: 1.2; }
+.uitnodiging { display: grid; justify-items: start; gap: 0.6rem; width: 100%; max-width: 34rem; padding: 1.1rem 1.3rem 1.2rem; border-radius: 1.3rem; background: #fff; box-shadow: 0 5px 0 var(--schaduw); text-align: left; }
+.uitnodiging p { font-weight: 400; }
+.online-blok { display: grid; justify-items: start; gap: 0.6rem; width: 100%; max-width: 34rem; }
+.online-blok h4 { margin-top: 0.4rem; }
+.online-blok .ranglijst { max-width: none; }
+details.meld { width: 100%; max-width: 34rem; }
+details.meld .keuzes { margin-top: 0.5rem; }
+.online-records { display: grid; gap: 1.1rem; width: 100%; }
+.online-records .lijsten > p { grid-column: 1 / -1; }
+.lijstkaart details.meld { margin-top: 0.3rem; }
+/* de pagina Privacy: het vak dat zegt of je meedoet */
+.scherm.tekst .kader { display: grid; justify-items: start; gap: 0.5rem; width: 100%; max-width: none; background: var(--tafel); }
+.scherm.tekst .kader .uitnodiging { box-shadow: none; }
+@media (max-width: 520px) {
+  .uitnodiging { padding: 1rem 1.1rem 1.1rem; }
+  .uitnodiging .knoppen { width: 100%; }
+  .uitnodiging .knop { flex: 1 1 100%; }
+  .schakel .keuze { flex: 1 1 0; }
+  .scherm .klein a, .uitnodiging a, details.vraag a { display: inline-block; padding-block: 0.75rem; }
+}

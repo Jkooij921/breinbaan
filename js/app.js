@@ -10,9 +10,10 @@
     baan: () => BB.baan.baan(app),
     poppetje: () => BB.baan.poppetje(app),
     vandaag: () => BB.baan.vandaag(app),
+    privacy: () => BB.online.privacy(app),
   };
   // Pagina's die in het menu bij een andere pagina horen.
-  const BIJ = { iq: 'start', oefenhal: 'start', dev: 'start', poppetje: 'baan', vandaag: 'baan' };
+  const BIJ = { iq: 'start', oefenhal: 'start', dev: 'start', poppetje: 'baan', vandaag: 'baan', privacy: 'uitleg' };
 
   function toon() {
     const naam = location.hash.slice(1) || 'start';
@@ -72,7 +73,7 @@
         pogingen.length ? el('button', { class: 'knop stil', type: 'button', onclick: exporteer }, 'Bewaar de ruwe scores') : null,
         pogingen.length ? el('button', { class: 'knop stil', type: 'button', onclick: wis }, 'Wis alles') : null),
       el('h2', { class: 'sectiekop' }, 'Een kopie van alles bewaren'),
-      el('p', { class: 'klein' }, 'Je records, rangen, stempels, je poppetje en je IQ-uitslagen staan alleen in deze browser. Wis je de browsergegevens, dan zijn ze weg. Op een iPhone kan dat al gebeuren na een week zonder bezoek. Met een kopie zet je alles terug, ook op een ander apparaat.'),
+      el('p', { class: 'klein' }, 'Je records, rangen, stempels, je poppetje en je IQ-uitslagen staan alleen in deze browser. Wis je de browsergegevens, dan zijn ze weg. Op een iPhone kan dat al gebeuren na een week zonder bezoek. Met een kopie zet je alles terug, ook op een ander apparaat. Doe je mee met de ranglijst van iedereen, bewaar het bestand dan voor jezelf: wie het heeft, kan onder jouw naam scores insturen.'),
       el('div', { class: 'knoppen' },
         el('button', { class: 'knop', type: 'button', onclick: BB.voortgang.bewaarBestand }, 'Bewaar een kopie'),
         el('label', { class: 'knop stil' }, 'Zet een kopie terug', el('input', { type: 'file', accept: '.json,application/json', hidden: '', onchange: e => {
@@ -93,8 +94,12 @@
         'De spellen zijn om te oefenen en je eigen record te verbeteren. Alleen de IQ-test geeft een IQ-uitslag.'),
       vraag('Kost het iets? Heb ik een account nodig?', 'Nee. Alles is gratis en je hoeft niets aan te maken. Je vult alleen een naam in, zodat je score een naam heeft.'),
       vraag('Waar worden mijn scores bewaard?',
-        'In de opslag van je browser, op het apparaat waar je nu op zit. Dat lijkt op cookies. Er gaat niets naar een server en niemand anders kan je scores zien.',
+        'In de opslag van je browser, op het apparaat waar je nu op zit. Dat lijkt op cookies. Zolang je niet meedoet met de ranglijst van iedereen gaat er niets naar een server en kan niemand anders je scores zien.',
         'Gevolg: op een andere computer of in een andere browser zie je je scores niet. Wis je je browsergegevens, dan zijn ze weg. Onder IQ-uitslagen kun je een kopie bewaren en terugzetten.'),
+      BB.online.kan() ? vraag('Wat is de ranglijst van iedereen?',
+        'Een ranglijst met de beste scores van alle spelers die meedoen, per spel en voor de dagkaart. Na een ronde krijg je de vraag of je wilt meedoen. Zeg je ja, dan gaan je beste scores en je naam naar de server van Breinbaan. Een account heb je niet nodig.',
+        'Je naam wordt eerst gekeurd: schelden en namen van anderen kunnen niet. Een score die niet kan kloppen komt niet op de lijst. Stoppen kan altijd, op de pagina Privacy.') : null,
+      vraag('Wat bewaart Breinbaan van mij?', el('a', { href: '#privacy' }, 'Dat staat op de pagina Privacy.')),
       el('h2', null, 'De spellen'),
       vraag('Welke groepen spellen zijn er en wat oefen je ermee?',
         'Er zijn vier groepen. Bij Rekenen oefen je hoofdrekenen op tempo, bij Geheugen oefen je iets onthouden terwijl je met iets anders bezig bent, bij Puzzels oefen je regels ontdekken en vormen in je hoofd draaien, en bij Tempo oefen je snel en precies kijken. Je wordt beter in het spel dat je oefent, maar je IQ stijgt er niet van.'),

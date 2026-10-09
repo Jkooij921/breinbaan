@@ -198,7 +198,7 @@ BB.voortgang = (function () {
 
   // ---- reservekopie: de browser kan zijn opslag wissen, dus je kunt alles in een bestand bewaren ----
   const SLEUTELS = ['speler', 'oefen', 'records', 'runs', 'iqpogingen', 'speeldagen', 'dagkaart', 'reeks', 'punten', 'verzameling',
-    'vrij', 'vaardigheid', 'uiterlijk', 'dagdoelen', 'gezien'];
+    'vrij', 'vaardigheid', 'uiterlijk', 'dagdoelen', 'gezien', 'sleutel', 'online', 'onlinenaam'];
   function bewaarBestand() {
     const data = { site: 'breinbaan', datum: new Date().toISOString() };
     for (const k of SLEUTELS) data[k] = BB.opslag.lees(k, null);

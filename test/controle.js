@@ -3,7 +3,7 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 const map = path.join(__dirname, '..', 'js');
 for (const f of ['basis.js', 'normen.js', 'taken/patronen.js', 'taken/cijferreeksen.js', 'taken/onthouden.js',
   'taken/sommen.js', 'taken/symbolen.js', 'taken/rekenspan.js', 'taken/kubussen.js', 'taken/controleren.js',
-  'taken/spiegelbeeld.js', 'taken/tikken.js', 'taken/kleurwoord.js', 'kaarten.js', 'voortgang.js', 'poppetje.js', 'baan.js', 'iqtest.js', 'oefenhal.js']) {
+  'taken/spiegelbeeld.js', 'taken/tikken.js', 'taken/kleurwoord.js', 'kaarten.js', 'voortgang.js', 'poppetje.js', 'baan.js', 'online.js', 'iqtest.js', 'oefenhal.js']) {
   vm.runInThisContext(fs.readFileSync(path.join(map, f), 'utf8'), { filename: f });
 }
 
@@ -425,6 +425,16 @@ for (const id of ['patronen', 'reeksen', 'kubussen', 'spiegelbeeld']) {
   eis(morgen.dag.datum === '2026-10-10' && morgen.dag.rondes === 1 && !morgen.dag.alles && st.rondes === 5, 'de volgende dag begint opnieuw, en de oude stand blijft heel');
   eis(B.dagTel(null, dag, { spel: 'sprint', groep: 'Rekenen', medaille: 0, dag: '2026-10-08' }).dag.dagkaart === false, 'de dagkaart van gisteren telt niet voor het doel van vandaag');
   eis(['vrij', 'vaardigheid', 'uiterlijk', 'dagdoelen', 'gezien'].every(k => V.SLEUTELS.includes(k)), 'de reservekopie bewaart ook de baan, je poppetje en je vaardigheden');
+}
+
+// De ranglijst van iedereen: zonder server doet de site niets met een server, en de teksten kloppen.
+{
+  const N = BB.online, toon = s => s + ' goed';
+  eis(N.kan() === false && N.doetMee() === false && N.start('sprint', 'sprint|1|+', null) === null, 'zonder server gaat er niets naar buiten');
+  eis(N.plekRegel({ plek: 2, van: 14, eigen: 9, wacht: false }, toon) === 'Jij staat 2e van 14 spelers, met 9 goed.', 'je plek in een zin');
+  eis(N.plekRegel({ plek: 1, van: 1, eigen: 9, wacht: false }, toon) === 'Jij staat 1e van 1 speler, met 9 goed.', 'je plek als je de enige bent');
+  eis(/eerst wordt nagekeken/.test(N.plekRegel({ plek: null, van: 3, eigen: 99, wacht: true }, toon)) && N.plekRegel({ plek: null, van: 3, eigen: null, wacht: false }, toon) === '3 spelers op deze lijst.', 'een score die nagekeken wordt, en een lijst waar je zelf niet op staat');
+  eis(['sleutel', 'online', 'onlinenaam'].every(k => BB.voortgang.SLEUTELS.includes(k)), 'de reservekopie bewaart ook de sleutel van dit apparaat');
 }
 
 // De dagkaart: dezelfde seed geeft bij elk nieuw spel dezelfde opgaven.

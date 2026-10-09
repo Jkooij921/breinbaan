@@ -376,6 +376,9 @@ BB.oefenhal = (function () {
     const naamNu = BB.opslag.lees('speler', '');
     const naam = el('input', { class: 'tekstveld', type: 'text', maxlength: 20, placeholder: 'Bijvoorbeeld Joran', value: naamNu });
     naam.addEventListener('input', () => BB.opslag.schrijf('speler', naam.value.trim()));
+    // Wie meedoet met de ranglijst van iedereen: de naam wordt daar gekeurd. Eronder staat hoe je daar heet.
+    const naamUitleg = el('p', { class: 'klein' }, BB.online.naamRegel());
+    naam.addEventListener('change', () => { naamUitleg.textContent = BB.online.naamRegel(); BB.online.naamBij().then(() => { naamUitleg.textContent = BB.online.naamRegel(); }); });
     // In het paneel op een telefoon sluit Enter het paneel. Anders start Enter het spel.
     naam.addEventListener('keydown', e => { if (e.key === 'Enter') { e.stopPropagation(); if (instel.classList.contains('open')) dicht(); else start(); } });
     const uitleg = spel.uitleg ? spel.uitleg(i) : null;
@@ -414,7 +417,7 @@ BB.oefenhal = (function () {
       !dag && spel.kiesRichting ? groep('In welke volgorde typ je ze na?', BB.cijfers.SOORTEN.map(soort => keuze(soort.naam, soort.id === i.richting, () => { i.richting = soort.id; })), 'Voorbeeld: ' + richting(i).voorbeeld + '.') : null,
       spel.race ? groep('Tegen wie race je?', SPOOK.map(sp => keuze(sp[1], i.spook === sp[0], () => { i.spook = sp[0]; })),
         'Tijdens het spel zie je twee banen: jij, en daaronder ' + (i.spook === 'uit' ? 'niemand. Je speelt alleen tegen de klok.' : i.spook === 'record' ? 'je snelste ronde tot nu toe.' : 'je vorige ronde.')) : null,
-      el('div', { class: 'veld naamveld' }, el('h3', null, 'Hoe heet je?'), naam, el('p', { class: 'klein' }, 'Je naam komt bij je score in de lijst met records op dit apparaat.')));
+      el('div', { class: 'veld naamveld' }, el('h3', null, 'Hoe heet je?'), naam, naamUitleg));
     function toonPaneel(direct) {
       instel.classList.add('open');
       instel.classList.toggle('direct', direct);
@@ -462,6 +465,8 @@ BB.oefenhal = (function () {
   function aftellen(doel, spel, dag) {
     document.body.classList.add('bezig');
     kleur(spel.id);
+    // Wie meedoet met de ranglijst van iedereen krijgt bij de start een startbewijs van de server (zie online.js).
+    const kaartje = BB.online.start(spel.id, sleutel(spel, dag ? dagInst(dag) : inst()), dag);
     const t = el('div', { class: 'aftel' }, '3');
     BB.scherm(doel, t);
     let n = 3;
@@ -476,7 +481,7 @@ BB.oefenhal = (function () {
         const spookNaam = i.spook === 'record' ? 'record' : 'vorige run';
         // spookRegel: een regel om onder het spel te zetten, voor spellen zonder banen.
         spel.speel(doel, i, { spook, runs, rnd, spookNaam, variant: variantVan(spel.id, i), spookRegel: spook ? 'Je ' + spookNaam + ': ' + spel.toon(spook.score) : '' },
-          res => uitslag(doel, spel, i, k, runs, res, dag));
+          res => uitslag(doel, spel, i, k, runs, res, dag, kaartje));
       }, 650);
     })();
   }
@@ -901,7 +906,8 @@ BB.oefenhal = (function () {
       if (deel < 1) requestAnimationFrame(stap);
     })();
   }
-  function uitslag(doel, spel, i, k, runs, res, dag) {
+  // kaartje: het startbewijs van de server, voor wie meedoet met de ranglijst van iedereen.
+  function uitslag(doel, spel, i, k, runs, res, dag, kaartje) {
     document.body.classList.remove('bezig');
     const telt = res.telt !== false, vorige = runs.vorige, beste = runs.beste, doelen = spel.medailles(i);
     const record = telt && (!beste || beter(spel, res.score, beste.score));
@@ -975,6 +981,7 @@ BB.oefenhal = (function () {
         res.fouten && res.fouten.length ? el('details', { class: 'hoe' }, el('summary', null, 'Bekijk je fouten (' + res.fouten.length + ')'),
           el('ul', { class: 'lijst' }, res.fouten.slice(0, 12).map(f => el('li', null, f)))) : null,
         res.extra,
+        BB.online.uitslagBlok(spel, telt && kaartje ? BB.online.stuur(kaartje, res.score) : null, dag),
         el('h3', null, 'Records op dit apparaat'),
         tabel(spel, top, plek, true)));
     // Wie nog op de toetsen tikt als de tijd om is, mag niet per ongeluk "Nog een keer" of "Klaar voor nu" raken.
@@ -1005,8 +1012,10 @@ BB.oefenhal = (function () {
     const tekst = delen.join(', ');
     return tekst ? tekst[0].toUpperCase() + tekst.slice(1) : '';
   }
-  function ranglijst(doel) {
+  // iedereen: de ranglijsten van alle spelers in plaats van die van dit apparaat. Wie meedoet ziet die het eerst.
+  function ranglijst(doel, iedereen) {
     delete document.body.dataset.spel;
+    if (iedereen === undefined) iedereen = BB.online.doetMee();
     const alles = BB.opslag.lees('records', {}), blokken = [];
     for (const spel of SPELLEN) {
       // Per spel staan de lijsten in de volgorde van de keuzes: eerst de kortste ronde.
@@ -1014,15 +1023,26 @@ BB.oefenhal = (function () {
       for (const k of sleutels.sort((a, b) => rondeUit(spel, a) - rondeUit(spel, b))) blokken.push({ spel, k });
     }
     const leeg = SPELLEN.filter(sp => !blokken.some(b => b.spel === sp)).map(sp => sp.naam);
+    const knop = (tekst, aan) => el('button', { type: 'button', class: 'keuze' + (aan ? ' aan' : ''), 'aria-pressed': aan, onclick: () => ranglijst(doel, tekst === 'Iedereen') }, tekst);
+    // Van iedereen: de lijsten van de spellen die je zelf gespeeld hebt. Wie nog niets speelde, ziet de eerste open spellen.
+    const kaarten = () => (blokken.length ? blokken : SPELLEN.filter(sp => B.spelOpen(sp.id)).slice(0, 8).map(spel => ({ spel, k: sleutel(spel, inst()) })))
+      .slice(0, 18).map(x => ({ spel: x.spel, k: x.k, tekst: instellingTekst(x.spel, x.k) }));
     const s = BB.scherm(doel,
       el('h1', null, 'Records'),
-      el('p', { class: 'intro' }, 'De tien beste scores per spel die op dit apparaat zijn gehaald.'),
-      el('p', { class: 'klein' }, 'Alleen wie deze computer of telefoon gebruikt, ziet deze lijsten. Spelen jullie met meer mensen op een apparaat, vul dan voor de start ieder je eigen naam in.'),
-      blokken.length
-        ? el('div', { class: 'lijsten' }, blokken.map(b => el('article', { class: 'lijstkaart k-' + b.spel.id },
-          el('h3', null, b.spel.naam), el('p', { class: 'klein' }, instellingTekst(b.spel, b.k)), tabel(b.spel, alles[b.k], 0, true))))
-        : el('p', null, 'Er zijn nog geen scores. Speel een spel, dan staat je score hier.'),
-      blokken.length && leeg.length ? el('p', { class: 'klein' }, 'Nog niet gespeeld: ' + leeg.join(', ') + '.') : null,
+      BB.online.kan() ? el('div', { class: 'keuzes schakel', role: 'group', 'aria-label': 'Welke records' }, knop('Op dit apparaat', !iedereen), knop('Iedereen', iedereen)) : null,
+      iedereen ? [
+        el('p', { class: 'intro' }, 'De beste scores van alle spelers die meedoen.'),
+        el('p', { class: 'klein' }, 'Per speler telt de beste score. Elke instelling van een spel heeft een eigen lijst. Je ziet de lijsten van de spellen die je zelf gespeeld hebt.'),
+        BB.online.recordsBlok(kaarten(), dagSpel(V.vandaag()), V.vandaag()),
+      ] : [
+        el('p', { class: 'intro' }, 'De tien beste scores per spel die op dit apparaat zijn gehaald.'),
+        el('p', { class: 'klein' }, 'Alleen wie deze computer of telefoon gebruikt, ziet deze lijsten. Spelen jullie met meer mensen op een apparaat, vul dan voor de start ieder je eigen naam in.'),
+        blokken.length
+          ? el('div', { class: 'lijsten' }, blokken.map(b => el('article', { class: 'lijstkaart k-' + b.spel.id },
+            el('h3', null, b.spel.naam), el('p', { class: 'klein' }, instellingTekst(b.spel, b.k)), tabel(b.spel, alles[b.k], 0, true))))
+          : el('p', null, 'Er zijn nog geen scores. Speel een spel, dan staat je score hier.'),
+        blokken.length && leeg.length ? el('p', { class: 'klein' }, 'Nog niet gespeeld: ' + leeg.join(', ') + '.') : null,
+      ],
       // Op een telefoon staat Spelen al in het menu onderaan.
       el('a', { class: 'knop alleen-breed', href: '#start' }, 'Naar de kaarten'));
     s.classList.add('breed');

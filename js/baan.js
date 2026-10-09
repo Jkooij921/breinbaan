@@ -186,6 +186,8 @@ BB.baan = (function () {
   }
 
   // ======== wat je op het scherm ziet ========
+  // Vervangt de inhoud van een vak. kinderen mag rijtjes in rijtjes bevatten: append zelf neemt die niet aan.
+  const vul = (knoop, kinderen) => BB.leeg(knoop).append(...[kinderen].flat(Infinity).filter(k => k != null && k !== false));
   const figuur = (klasse, level) => el('span', { class: 'figuur' + (klasse ? ' ' + klasse : ''), html: P.svg(uiterlijk(), level == null ? levelNu() : level) });
   const balk = (deel, klasse) => el('div', { class: 'levelspoor' }, el('div', { class: 'levelvul' + (klasse ? ' ' + klasse : ''), style: 'width:' + Math.round(deel * 100) + '%' }));
   // De regel in de kop op een telefoon: het hoofd van je poppetje, je level en je reeks.
@@ -286,7 +288,7 @@ BB.baan = (function () {
           v.soort === 'punten' ? el('strong', null, '+' + v.punten + ' punten') : V.spaarkaart(v.kaart, true),
           el('span', null, v.soort === 'punten' ? 'Bonuspunten' : v.dubbel ? 'Deze had je al: +' + v.punten + ' punten' : 'Nieuw in je verzameling'));
         // De bonuspunten kunnen je net over de rand van een level tillen.
-        BB.leeg(levelVak).append(levelDeel(b.met, b.levelVoor));
+        vul(levelVak, levelDeel(b.met, b.levelVoor));
       });
     }
     const g = b.vaardig, st = dagStand();

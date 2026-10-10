@@ -222,7 +222,7 @@ BB.oefenhal = (function () {
   const dagSpel = datum => SPELLEN[V.dagSpel(datum, SPELLEN.length)];
 
   function deel(knop, datum, spel, r) {
-    const tekst = 'Breinbaan dagkaart ' + V.kortDatum(datum) + ': ' + spel.naam + ' ' + spel.toon(r.score) + (r.m ? ', ' + MEDAILLE[r.m].toLowerCase() : '');
+    const tekst = 'Sharpest dagkaart ' + V.kortDatum(datum) + ': ' + spel.naam + ' ' + spel.toon(r.score) + (r.m ? ', ' + MEDAILLE[r.m].toLowerCase() : '');
     const vraag = () => window.prompt('Kopieer deze tekst:', tekst);
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(tekst).then(() => { knop.textContent = 'Gekopieerd'; }, vraag);
     else vraag();

@@ -116,7 +116,7 @@ BB.online = (function () {
     const melding = el('p', { class: 'klein', role: 'status' });
     const blok = el('div', { class: 'uitnodiging' },
       el('h3', null, 'Wil je op de ranglijst van iedereen?'),
-      el('p', null, 'Dan gaan je beste scores en je naam naar de server van Breinbaan, zodat andere spelers ze zien. Je hebt geen account nodig. Dit apparaat krijgt een willekeurige code. Meer weten we niet van je.'),
+      el('p', null, 'Dan gaan je beste scores en je naam naar de server van Sharpest, zodat andere spelers ze zien. Je hebt geen account nodig. Dit apparaat krijgt een willekeurige code. Meer weten we niet van je.'),
       el('div', { class: 'knoppen links' },
         el('button', { class: 'knop', type: 'button', onclick: e => {
           e.target.disabled = true;
@@ -192,10 +192,10 @@ BB.online = (function () {
     const punt = (kop, ...alineas) => [el('h2', null, kop), alineas.map(a => el('p', null, a))];
     const s = BB.scherm(doel,
       el('h1', null, 'Privacy'),
-      el('p', { class: 'intro' }, 'Wat Breinbaan van je bewaart, waar dat staat en hoe je het weghaalt.'),
+      el('p', { class: 'intro' }, 'Wat Sharpest van je bewaart, waar dat staat en hoe je het weghaalt.'),
       stand,
       punt('Op je eigen apparaat', 'Je scores, je level, je poppetje en je IQ-uitslagen staan in de opslag van je browser. Dat lijkt op cookies. Ze gaan nergens heen en alleen wie dit apparaat gebruikt kan ze zien. Wis je je browsergegevens, dan zijn ze weg.',
-        'Breinbaan gebruikt geen cookies om je te volgen, geen advertenties en geen meetprogramma\'s van andere bedrijven.'),
+        'Sharpest gebruikt geen cookies om je te volgen, geen advertenties en geen meetprogramma\'s van andere bedrijven.'),
       punt('Als je meedoet met de ranglijst van iedereen', 'Dat gebeurt alleen als je daar zelf voor kiest. Dan bewaart de server:',
         'Een willekeurige code van dit apparaat. Daaraan herkent de server dat een score van jou is. De code zegt niets over wie je bent.',
         'De naam die je kiest. Kies geen naam waaraan anderen je kunnen herkennen als je dat niet wilt.',

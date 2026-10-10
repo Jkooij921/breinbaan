@@ -4,7 +4,7 @@
 BB.online = (function () {
   const el = BB.el;
   // Het adres van de server. Leeg betekent: er is geen server en de site werkt alleen op dit apparaat.
-  const ADRES = '';
+  const ADRES = 'https://api.spelendslagen.nl';
   const adres = () => (typeof window !== 'undefined' && window.BREINBAAN_SERVER) || ADRES;
   // Dubbelklikken op het bestand (file:) kan niet met de server praten: die neemt alleen verzoeken van de echte site aan.
   const kan = () => !!adres() && typeof fetch === 'function' && typeof location !== 'undefined' && location.protocol !== 'file:';

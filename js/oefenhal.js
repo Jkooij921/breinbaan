@@ -374,7 +374,7 @@ BB.oefenhal = (function () {
       toelichting ? el('p', { class: 'klein' }, toelichting) : null);
     const start = () => aftellen(doel, spel, dag);
     const naamNu = BB.opslag.lees('speler', '');
-    const naam = el('input', { class: 'tekstveld', type: 'text', maxlength: 20, placeholder: 'Bijvoorbeeld Joran', value: naamNu });
+    const naam = el('input', { class: 'tekstveld', type: 'text', maxlength: 20, placeholder: 'Bijvoorbeeld Sam', value: naamNu });
     naam.addEventListener('input', () => BB.opslag.schrijf('speler', naam.value.trim()));
     // Wie meedoet met de ranglijst van iedereen: de naam wordt daar gekeurd. Eronder staat hoe je daar heet.
     const naamUitleg = el('p', { class: 'klein' }, BB.online.naamRegel());

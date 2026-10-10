@@ -203,7 +203,7 @@ BB.voortgang = (function () {
     // 'breinbaan' was de werknaam. Het woord blijft in het bestand staan, zodat een oude reservekopie nog terug te zetten is.
     const data = { site: 'breinbaan', datum: new Date().toISOString() };
     for (const k of SLEUTELS) data[k] = BB.opslag.lees(k, null);
-    const a = el('a', { href: URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' })), download: 'sharpest-voortgang-' + vandaag() + '.json' });
+    const a = el('a', { href: URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' })), download: 'descherpste-voortgang-' + vandaag() + '.json' });
     a.click();
     URL.revokeObjectURL(a.href);
   }

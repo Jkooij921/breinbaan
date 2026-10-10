@@ -551,7 +551,8 @@ body[data-spel="kleurwoord"] .balk-vul { background: var(--kleur-d); }
 
   /* kop: links het merk, rechts je level en je reeks. Tijdens een ronde blijft de kop zoals hij was */
   body:not(.bezig) .kop { flex-wrap: nowrap; justify-content: space-between; min-height: 3.2rem; padding: 0.3rem 1rem 0.2rem; }
-  body:not(.bezig) .merk { display: flex; align-items: center; min-height: 2.7rem; font-size: 1.4rem; }
+  /* de naam staat hier op twee regels (De / Scherpste), dicht op elkaar zodat de kop niet hoger wordt */
+  body:not(.bezig) .merk { display: flex; align-items: center; min-height: 2.7rem; font-size: 1.4rem; line-height: 1; }
   .stand-kort { display: flex; align-items: center; min-height: 2.6rem; padding: 0 0.95rem; border-radius: 999px; background: #fff; box-shadow: 0 3px 0 var(--schaduw); font-size: 0.85rem; text-decoration: none; white-space: nowrap; }
   body[data-spel] .stand-kort { display: none; }
   /* voor en na een spel staat er in plaats van het merk een weg terug */

@@ -48,7 +48,7 @@
     const pogingen = BB.opslag.lees('iqpogingen', []);
     const exporteer = () => {
       const blob = new Blob([JSON.stringify({ normversie: BB.NORMEN.versie, pogingen }, null, 2)], { type: 'application/json' });
-      const a = el('a', { href: URL.createObjectURL(blob), download: 'sharpest-uitslagen.json' });
+      const a = el('a', { href: URL.createObjectURL(blob), download: 'descherpste-uitslagen.json' });
       a.click();
       URL.revokeObjectURL(a.href);
     };
@@ -77,7 +77,7 @@
       el('div', { class: 'knoppen' },
         el('button', { class: 'knop', type: 'button', onclick: BB.voortgang.bewaarBestand }, 'Bewaar een kopie'),
         el('label', { class: 'knop stil' }, 'Zet een kopie terug', el('input', { type: 'file', accept: '.json,application/json', hidden: '', onchange: e => {
-          if (e.target.files[0]) BB.voortgang.zetTerug(e.target.files[0], gelukt => { alert(gelukt ? 'Je voortgang is teruggezet.' : 'Dit bestand hoort niet bij Sharpest.'); if (gelukt) { BB.baan.start(); uitslagen(); } });
+          if (e.target.files[0]) BB.voortgang.zetTerug(e.target.files[0], gelukt => { alert(gelukt ? 'Je voortgang is teruggezet.' : 'Dit bestand hoort niet bij De Scherpste.'); if (gelukt) { BB.baan.start(); uitslagen(); } });
         } }))));
     s.classList.add('breed');
   }
@@ -97,9 +97,9 @@
         'In de opslag van je browser, op het apparaat waar je nu op zit. Dat lijkt op cookies. Zolang je niet meedoet met de ranglijst van iedereen gaat er niets naar een server en kan niemand anders je scores zien.',
         'Gevolg: op een andere computer of in een andere browser zie je je scores niet. Wis je je browsergegevens, dan zijn ze weg. Onder IQ-uitslagen kun je een kopie bewaren en terugzetten.'),
       BB.online.kan() ? vraag('Wat is de ranglijst van iedereen?',
-        'Een ranglijst met de beste scores van alle spelers die meedoen, per spel en voor de dagkaart. Na een ronde krijg je de vraag of je wilt meedoen. Zeg je ja, dan gaan je beste scores en je naam naar de server van Sharpest. Een account heb je niet nodig.',
+        'Een ranglijst met de beste scores van alle spelers die meedoen, per spel en voor de dagkaart. Na een ronde krijg je de vraag of je wilt meedoen. Zeg je ja, dan gaan je beste scores en je naam naar de server van De Scherpste. Een account heb je niet nodig.',
         'Je naam wordt eerst gekeurd: schelden en namen van anderen kunnen niet. Een score die niet kan kloppen komt niet op de lijst. Stoppen kan altijd, op de pagina Privacy.') : null,
-      vraag('Wat bewaart Sharpest van mij?', el('a', { href: '#privacy' }, 'Dat staat op de pagina Privacy.')),
+      vraag('Wat bewaart De Scherpste van mij?', el('a', { href: '#privacy' }, 'Dat staat op de pagina Privacy.')),
       el('h2', null, 'De spellen'),
       vraag('Welke groepen spellen zijn er en wat oefen je ermee?',
         'Er zijn vier groepen. Bij Rekenen oefen je hoofdrekenen op tempo, bij Geheugen oefen je iets onthouden terwijl je met iets anders bezig bent, bij Puzzels oefen je regels ontdekken en vormen in je hoofd draaien, en bij Tempo oefen je snel en precies kijken. Je wordt beter in het spel dat je oefent, maar je IQ stijgt er niet van.'),

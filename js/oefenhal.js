@@ -345,7 +345,7 @@ BB.oefenhal = (function () {
           el('span', { class: 'klein' }, 'Je bent level ' + B.levelNu() + '. Nog ' + punten(nodig - totaal) + '. Elke ronde van een ander spel levert punten op.')),
         el('p', { class: 'klein' }, 'Ligt dit spel op de dagkaart, dan kun je het die dag wel spelen.'),
         el('div', { class: 'knoppen' },
-          el('a', { class: 'knop groot', href: '#baan' }, 'Bekijk de baan'),
+          el('a', { class: 'knop groot', href: '#levels' }, 'Bekijk de levels'),
           el('button', { class: 'knop stil alleen-breed', type: 'button', onclick: () => naarStart(doel) }, 'Terug naar de kaarten'))));
     s.classList.add('begin', 'slot');
   }

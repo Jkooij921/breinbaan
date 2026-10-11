@@ -189,7 +189,7 @@ BB.voortgang = (function () {
       el('p', { class: 'intro' }, 'Je hebt ' + heb.length + ' van de ' + KAARTEN.length + ' bijzondere kaarten.'),
       el('p', { class: 'klein' }, 'Na een ronde krijg je soms een verrassing: bonuspunten of een bijzondere kaart. Welke kaart je krijgt is toeval. Een kaart die je al had levert ' + DUBBEL + ' punten op.'),
       el('div', { class: 'spaarkaarten' }, KAARTEN.map(k => spaarkaart(k, heb.includes(k.id)))),
-      el('div', { class: 'knoppen links' }, el('a', { class: 'knop stil', href: '#baan' }, 'Naar de baan'), el('a', { class: 'knop alleen-breed', href: '#start' }, 'Naar de kaarten')));
+      el('div', { class: 'knoppen links' }, el('a', { class: 'knop stil', href: '#levels' }, 'Naar de levels'), el('a', { class: 'knop alleen-breed', href: '#start' }, 'Naar de kaarten')));
     s.classList.add('breed');
   }
 

@@ -1,4 +1,4 @@
-// De baan: wat je bij elk level krijgt, welke spellen nog op slot zitten, je vier vaardigheden, je poppetje
+// De baan (in het menu heet de pagina Levels): wat je bij elk level krijgt, welke spellen nog op slot zitten, je vier vaardigheden, je poppetje
 // en de doelen van de dag. Alles bouwt op de punten uit voortgang.js en staat in de opslag van de browser.
 // De regels staan los van het scherm, zodat ze te testen zijn (test/controle.js).
 BB.baan = (function () {
@@ -66,7 +66,7 @@ BB.baan = (function () {
   // De eerstvolgende halte, in een zin. stand: uit V.levelStand.
   function halteTekst(stand) {
     const volgend = stand.level + 1;
-    if (!BAAN[volgend]) return 'Je hebt alle haltes van de baan gehad.';
+    if (!BAAN[volgend]) return 'Je hebt alle haltes gehad.';
     return 'Volgende halte, level ' + volgend + ': ' + opsomming(BAAN[volgend].map(b => wat(b))) + '. Nog ' + punten(stand.nodig - stand.binnen) + '.';
   }
 
@@ -236,7 +236,7 @@ BB.baan = (function () {
       st.alles ? el('a', { class: 'tekstknop', href: '#vandaag' }, 'Bekijk je dag') : null);
   }
   // Op een telefoon: de doelen in een paar woorden, met een stip per doel. Een tik opent de pagina met de doelen.
-  // De strook staat in de kop boven de eerste rij kaarten, de balk op de pagina De baan.
+  // De strook staat in de kop boven de eerste rij kaarten, de balk op de pagina Levels.
   const stippen = st => el('span', { class: 'stippen', 'aria-hidden': 'true' }, st.doelen.map(d => el('i', { class: d.klaar ? 'vol' : null })));
   function doelenStrook() {
     const st = dagStand();
@@ -256,7 +256,7 @@ BB.baan = (function () {
         el('div', null, levelDeel(V.levelStand(puntenNu()), levelNu()))),
       V.reeksBlok(),
       el('div', { class: 'status-links' },
-        el('a', { href: '#baan' }, 'Bekijk de baan'), el('a', { href: '#poppetje' }, 'Kleed je poppetje aan'),
+        el('a', { href: '#levels' }, 'Bekijk de levels'), el('a', { href: '#poppetje' }, 'Kleed je poppetje aan'),
         el('a', { href: '#verzameling' }, 'Verzameling: ' + heb.length + ' van ' + V.KAARTEN.length + ' bijzondere kaarten')));
   }
   // Een keer, voor wie al speelde: wat er nieuw is.
@@ -264,9 +264,9 @@ BB.baan = (function () {
     if (!BB.opslag.lees('gezien', {}).nieuw) return null;
     const weg = () => { BB.opslag.schrijf('gezien', {}); blok.remove(); };
     const blok = el('div', { class: 'melding nieuw' },
-      el('strong', null, 'Nieuw: de baan en je poppetje. '),
+      el('strong', null, 'Nieuw: de pagina Levels en je poppetje. '),
       'Bij elk level krijg je nu iets: een spel, een variant of een onderdeel voor je poppetje. Spellen die je al speelde blijven open. ',
-      el('a', { href: '#baan' }, 'Bekijk de baan'), ' ',
+      el('a', { href: '#levels' }, 'Bekijk de levels'), ' ',
       el('button', { class: 'tekstknop', type: 'button', onclick: weg }, 'Sluit'));
     return blok;
   }
@@ -311,7 +311,7 @@ BB.baan = (function () {
       verras);
   }
 
-  // ---- de pagina De baan ----
+  // ---- de pagina Levels (in de code heet ze nog de baan) ----
   function beeld(b) {
     if (b[0] === 'spel') return el('span', { class: 'halte-beeld k-' + b[1], html: BB.kaart.TEKEN[b[1]] });
     if (b[0] === 'variant') return el('span', { class: 'halte-beeld k-' + BB.oefenhal.VARIANT[b[1]].spellen[0], html: BB.kaart.TEKEN[BB.oefenhal.VARIANT[b[1]].spellen[0]] });
@@ -334,7 +334,7 @@ BB.baan = (function () {
     const stand = V.levelStand(puntenNu()), heb = BB.opslag.lees('verzameling', []), alle = vaardig();
     const rij = el('ol', { class: 'haltes' }, [1].concat(Object.keys(BAAN).map(Number)).map(l => halte(l, stand)));
     const s = BB.scherm(doel,
-      el('h1', null, 'De baan'),
+      el('h1', null, 'De levels'),
       el('div', { class: 'baan-kop' },
         el('a', { class: 'figuur-link', href: '#poppetje', title: 'Kleed je poppetje aan' }, figuur('groot')),
         el('div', { class: 'baan-stand' },
@@ -393,7 +393,7 @@ BB.baan = (function () {
         el('div', { class: 'kleed-voor' }, groot,
           el('p', { class: 'klein' }, 'Het getal op de buik is je level.', el('span', { class: 'alleen-breed' }, ' Kies hiernaast hoe je poppetje eruitziet.'), ' Wat op slot zit, speel je vrij met levels en vaardigheden.')),
         el('div', { class: 'kleed-keuzes' }, rijen)),
-      el('a', { class: 'knop stil', href: '#baan' }, 'Naar de baan'));
+      el('a', { class: 'knop stil', href: '#levels' }, 'Naar de levels'));
     s.classList.add('breed', 'kleedscherm');
     ververs();
   }
@@ -416,7 +416,7 @@ BB.baan = (function () {
       el('div', { class: 'knoppen' },
         !st.alles && open ? el('a', { class: 'knop', href: '#dag-' + st.datum }, 'Speel de dagkaart') : null,
         el('a', { class: 'knop' + (!st.alles && open ? ' stil' : ''), href: '#start' }, 'Naar de kaarten'),
-        el('a', { class: 'knop stil', href: '#baan' }, 'Bekijk de baan')));
+        el('a', { class: 'knop stil', href: '#levels' }, 'Bekijk de levels')));
     s.classList.add('dagscherm');
   }
 

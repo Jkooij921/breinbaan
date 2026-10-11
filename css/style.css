@@ -754,7 +754,7 @@ body[data-spel="kleurwoord"] .balk-vul { background: var(--kleur-d); }
 /* de verrassing blijft een kaart, ook naast een hoog blok */
 .beloning > .verrassing { align-self: flex-start; }
 
-/* ---- de pagina De baan ---- */
+/* ---- de pagina Levels (in de code heet ze nog de baan) ---- */
 .baan-kop { display: flex; flex-wrap: wrap; align-items: center; gap: 1.2rem 2rem; padding: 1.2rem 1.6rem 1.4rem; border-radius: 1.6rem; background: #fff; box-shadow: 0 6px 0 var(--schaduw); }
 .baan-stand { flex: 1 1 18rem; display: grid; justify-items: start; gap: 0.6rem; min-width: 0; }
 .baan-stand .levelbalk { width: min(100%, 26rem); }

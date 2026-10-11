@@ -345,7 +345,7 @@ for (const id of ['patronen', 'reeksen', 'kubussen', 'spiegelbeeld']) {
   eis(new Set(alle.map(b => b.join(':'))).size === alle.length, 'niets staat twee keer op de baan');
   for (const b of alle) eis(typeof B.wat(b, true) === 'string' && !verboden.test(B.wat(b, true)) && !verboden.test(B.wat(b)) && !/undefined/.test(B.wat(b, true) + B.wat(b)), 'wat je krijgt staat er in woorden: ' + b.join(' '));
   eis(B.halteTekst(V.levelStand(0)) === 'Volgende halte, level 2: het spel Spiegelbeeld en een pet voor je poppetje. Nog 50 punten.', 'de volgende halte in een zin (' + B.halteTekst(V.levelStand(0)) + ')');
-  eis(B.halteTekst(V.levelStand(V.levelDrempel(B.TOP))) === 'Je hebt alle haltes van de baan gehad.', 'na de laatste halte staat er dat je ze gehad hebt');
+  eis(B.halteTekst(V.levelStand(V.levelDrempel(B.TOP))) === 'Je hebt alle haltes gehad.', 'na de laatste halte staat er dat je ze gehad hebt');
 
   // Spellen op slot: acht zijn er open vanaf het begin, en in elke groep minstens een.
   eis(B.OP_SLOT.length === 6 && B.OP_SLOT.every(id => spelVan(id)) && O.SPELLEN.length - B.OP_SLOT.length === 8, 'acht spellen zijn open en zes bestaande spellen zitten op slot');
